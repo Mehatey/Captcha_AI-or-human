@@ -34840,6 +34840,9 @@ void main() {
   var openerFinished = false;
   var openerTypedText = "";
   var openerModel = null;
+  var openerFragments = null;
+  var openerFragmentUniforms = null;
+  var openerSolidMaterials = /* @__PURE__ */ new Set();
   var openerModelReady = false;
   var openerLoadProgress = 0;
   var openerKeyBuffer = null;
@@ -34867,6 +34870,90 @@ void main() {
   var openerWarm = new PointLight(16766128, 24, 15, 2);
   openerWarm.position.set(4, -2, 3);
   openerLogoScene.add(openerWarm);
+  function createOpenerFragments(root) {
+    root.updateMatrixWorld(true);
+    const candidates = [];
+    let meshIndex = 0;
+    root.traverse((child) => {
+      if (!child.isMesh || !child.geometry?.attributes?.position) return;
+      const attribute = child.geometry.attributes.position;
+      const stride = Math.max(1, Math.floor(attribute.count / 620));
+      const point = new Vector3();
+      for (let vertex2 = 0; vertex2 < attribute.count; vertex2 += stride) {
+        point.fromBufferAttribute(attribute, vertex2).applyMatrix4(child.matrixWorld);
+        candidates.push({
+          position: point.clone(),
+          seed: (vertex2 * 16807 + meshIndex * 193 + 17) % 997 / 997
+        });
+      }
+      meshIndex += 1;
+    });
+    if (!candidates.length) return;
+    const count = Math.min(2800, candidates.length);
+    const positions = new Float32Array(count * 3);
+    const seeds = new Float32Array(count);
+    const sampleStride = candidates.length / count;
+    for (let index = 0; index < count; index += 1) {
+      const sample = candidates[Math.floor(index * sampleStride)];
+      positions[index * 3] = sample.position.x;
+      positions[index * 3 + 1] = sample.position.y;
+      positions[index * 3 + 2] = sample.position.z;
+      seeds[index] = sample.seed;
+    }
+    const geometry = new BufferGeometry();
+    geometry.setAttribute("position", new BufferAttribute(positions, 3));
+    geometry.setAttribute("aSeed", new BufferAttribute(seeds, 1));
+    openerFragmentUniforms = {
+      uProgress: { value: 0 },
+      uTime: { value: 0 },
+      uPixelRatio: { value: Math.min(window.devicePixelRatio, 1.5) }
+    };
+    const material = new ShaderMaterial({
+      uniforms: openerFragmentUniforms,
+      transparent: true,
+      depthWrite: false,
+      blending: AdditiveBlending,
+      vertexShader: `
+      uniform float uProgress;
+      uniform float uTime;
+      uniform float uPixelRatio;
+      attribute float aSeed;
+      varying float vAlpha;
+      varying float vSeed;
+      void main() {
+        float eased = uProgress * uProgress * (3.0 - 2.0 * uProgress);
+        vec3 direction = normalize(position + vec3(0.001));
+        vec3 drift = vec3(
+          sin(aSeed * 41.0 + uTime * 2.1) * 0.42,
+          (aSeed - 0.34) * 2.1,
+          cos(aSeed * 29.0 - uTime * 1.7) * 0.65
+        );
+        vec3 broken = position + direction * (0.24 + aSeed * 1.65) * eased + drift * eased;
+        vec4 viewPosition = modelViewMatrix * vec4(broken, 1.0);
+        gl_Position = projectionMatrix * viewPosition;
+        gl_PointSize = (2.0 + aSeed * 3.8) * uPixelRatio * (1.0 - eased * 0.34);
+        vAlpha = smoothstep(0.02, 0.18, uProgress) * (1.0 - smoothstep(0.72, 1.0, uProgress));
+        vSeed = aSeed;
+      }
+    `,
+      fragmentShader: `
+      varying float vAlpha;
+      varying float vSeed;
+      void main() {
+        float distanceToCenter = length(gl_PointCoord - 0.5);
+        float particle = 1.0 - smoothstep(0.08, 0.5, distanceToCenter);
+        vec3 blue = vec3(0.12, 0.48, 1.0);
+        vec3 silver = vec3(0.82, 0.94, 1.0);
+        vec3 color = mix(blue, silver, smoothstep(0.2, 0.92, vSeed));
+        gl_FragColor = vec4(color, particle * vAlpha * (0.58 + vSeed * 0.42));
+      }
+    `
+    });
+    openerFragments = new Points(geometry, material);
+    openerFragments.frustumCulled = false;
+    openerFragments.renderOrder = 12;
+    openerModel.add(openerFragments);
+  }
   function setOpenerProgress(value) {
     openerLoadProgress = Math.max(openerLoadProgress, Math.min(1, value));
     const percent = Math.round(openerLoadProgress * 100);
@@ -34893,11 +34980,15 @@ void main() {
         materials.forEach((material) => {
           material.envMapIntensity = 2.4;
           material.roughness = Math.min(material.roughness ?? 0.5, 0.28);
+          material.transparent = true;
+          material.userData.openerBaseOpacity = material.opacity;
+          openerSolidMaterials.add(material);
         });
       });
       openerModel = new Group();
       openerModel.add(root);
       openerLogoScene.add(openerModel);
+      createOpenerFragments(root);
       openerModelReady = true;
       setOpenerProgress(0.7);
     },
@@ -34913,6 +35004,13 @@ void main() {
       fallback.add(second);
       openerModel = fallback;
       openerLogoScene.add(openerModel);
+      fallback.traverse((child) => {
+        if (!child.isMesh) return;
+        child.material.transparent = true;
+        child.material.userData.openerBaseOpacity = child.material.opacity;
+        openerSolidMaterials.add(child.material);
+      });
+      createOpenerFragments(fallback);
       openerModelReady = true;
       setOpenerProgress(0.7);
     }
@@ -34936,6 +35034,7 @@ void main() {
   function resizeOpener() {
     openerRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     openerRenderer.setSize(window.innerWidth, window.innerHeight, false);
+    if (openerFragmentUniforms) openerFragmentUniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 1.5);
     openerLogoCamera.aspect = window.innerWidth / window.innerHeight;
     openerLogoCamera.updateProjectionMatrix();
   }
@@ -34950,6 +35049,8 @@ void main() {
     experience.setAttribute("aria-hidden", "false");
     window.setTimeout(() => {
       opener.hidden = true;
+      openerFragments?.geometry.dispose();
+      openerFragments?.material.dispose();
       openerEnvironmentTarget.dispose();
       openerRenderer.dispose();
     }, reducedMotion ? 120 : 1050);
@@ -35044,6 +35145,8 @@ void main() {
     const elapsed = openerStartedAt === null ? 0 : (now - openerStartedAt) / 1e3;
     if (openerModelReady && openerModel) {
       const activeTime = openerStartedAt === null ? idle * 0.34 : elapsed;
+      const fracture = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 2.55, 4.5);
+      const solidFade = MathUtils.smoothstep(fracture, 0.08, 0.88);
       openerModel.rotation.y = activeTime * (openerStartedAt === null ? 0.72 : 2.76);
       openerModel.rotation.x = Math.sin(activeTime * 0.78) * 0.1;
       openerModel.rotation.z = Math.sin(activeTime * 0.42) * 0.035;
@@ -35053,6 +35156,14 @@ void main() {
       openerModel.scale.setScalar(scale);
       openerKey.position.x = Math.sin(activeTime * 1.05) * 4.2;
       openerRim.position.x = -3.2 + Math.cos(activeTime * 0.72) * 1.2;
+      openerSolidMaterials.forEach((material) => {
+        material.opacity = (material.userData.openerBaseOpacity ?? 1) * (1 - solidFade);
+        material.depthWrite = fracture < 0.14;
+      });
+      if (openerFragmentUniforms) {
+        openerFragmentUniforms.uProgress.value = fracture;
+        openerFragmentUniforms.uTime.value = activeTime;
+      }
     }
     if (openerStartedAt !== null) {
       const nextText = typewriterText(elapsed);

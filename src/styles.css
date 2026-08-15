@@ -95,7 +95,7 @@ body.opener-complete #experience {
 }
 
 .opener.is-running #opener-video {
-  animation: opener-video 8.15s 3.8s cubic-bezier(0.45, 0, 0.25, 1) both;
+  animation: opener-video 8.35s 3.95s cubic-bezier(0.45, 0, 0.25, 1) both;
 }
 
 .opener-video-ghost {
@@ -395,10 +395,42 @@ body.opener-complete #experience {
 }
 
 @keyframes opener-video {
-  0%, 5% { opacity: 0; transform: translate(-50%, -50%) scale(0.78); }
-  14% { opacity: 1; transform: translate(-50%, -50%) scale(0.84); }
-  94% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.12); }
+  0%, 4% {
+    opacity: 0;
+    clip-path: inset(50% 0 50% 0);
+    filter: brightness(3.2) saturate(0) blur(8px);
+    transform: translate(-50%, -50%) scale(0.74, 0.03);
+  }
+  8% {
+    opacity: 0.9;
+    clip-path: inset(47.5% 0 47.5% 0);
+    filter: brightness(3.4) saturate(0.4) blur(2px);
+    transform: translate(-50%, -50%) scale(0.8, 0.12);
+  }
+  15% {
+    opacity: 1;
+    clip-path: inset(27% 0 27% 0);
+    filter: brightness(1.65) saturate(1.5) blur(0);
+    transform: translate(-50%, -50%) scale(0.83, 0.62);
+  }
+  23% {
+    opacity: 1;
+    clip-path: inset(0);
+    filter: brightness(1) saturate(1);
+    transform: translate(-50%, -50%) scale(0.87);
+  }
+  94% {
+    opacity: 1;
+    clip-path: inset(0);
+    filter: brightness(1) saturate(1);
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    clip-path: inset(0);
+    filter: brightness(1.25) saturate(0.7);
+    transform: translate(-50%, -50%) scale(1.12);
+  }
 }
 @keyframes opener-logo-phase {
   0% { opacity: 0; transform: scale(0.9); }
