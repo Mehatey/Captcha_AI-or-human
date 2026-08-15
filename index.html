@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#e9e5db" />
+    <meta name="description" content="Ten drawing based CAPTCHA studies asking what remains human when AI can draw too." />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CAPTCHA AFTER HUMAN" />
+    <meta property="og:description" content="Draw beside an AI. Transform both gestures into living procedural forms." />
+    <meta property="og:image" content="__SITE_ORIGIN__/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="CAPTCHA AFTER HUMAN" />
+    <meta name="twitter:description" content="Draw beside an AI. Transform both gestures into living procedural forms." />
+    <meta name="twitter:image" content="__SITE_ORIGIN__/og.png" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f04f3d'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23171718' stroke-width='2'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./assets/app.css" />
+    <title>CAPTCHA: After Human</title>
+  </head>
+  <body>
+    <main id="experience" data-stage="human">
+      <div id="webgl" aria-hidden="true"></div>
+
+      <nav class="chapters" aria-label="Specimens">
+        <button class="chapter is-active" data-index="0" type="button" aria-label="Human"><span>01</span></button>
+        <button class="chapter" data-index="1" type="button" aria-label="Machine"><span>02</span></button>
+        <button class="chapter" data-index="2" type="button" aria-label="Nature"><span>03</span></button>
+        <button class="chapter" data-index="3" type="button" aria-label="Weather"><span>04</span></button>
+        <button class="chapter" data-index="4" type="button" aria-label="Mirror"><span>05</span></button>
+        <button class="chapter" data-index="5" type="button" aria-label="Shadow"><span>06</span></button>
+        <button class="chapter" data-index="6" type="button" aria-label="Echo"><span>07</span></button>
+        <button class="chapter" data-index="7" type="button" aria-label="Swarm"><span>08</span></button>
+        <button class="chapter" data-index="8" type="button" aria-label="Relic"><span>09</span></button>
+        <button class="chapter" data-index="9" type="button" aria-label="Recall"><span>10</span></button>
+      </nav>
+
+      <section class="prompt" aria-live="assertive">
+        <span id="prompt-mark" aria-hidden="true"></span>
+        <p id="prompt-text">DRAW AN IMPERFECT CIRCLE</p>
+      </section>
+
+      <div class="progress" aria-label="Series progress">
+        <span class="current" id="current-index">1</span>
+        <span class="rule"><i id="progress-fill"></i></span>
+        <span>10</span>
+      </div>
+
+      <button id="previous" class="direction previous" type="button" aria-label="Previous specimen">←</button>
+      <button id="next" class="direction next" type="button" aria-label="Next specimen">→</button>
+      <button id="generate" class="generate" type="button">TRANSFORM</button>
+      <button id="clear" class="clear" type="button">CLEAR</button>
+      <button id="signal" class="signal" type="button" aria-label="Play sound signal">◉</button>
+      <div class="draw-timer" aria-label="Drawing time remaining">
+        <span id="timer-value">15.0</span>
+        <b><i id="timer-fill"></i></b>
+      </div>
+      <div class="comparison" aria-hidden="true"><span>HUMAN</span><span>AI</span></div>
+      <div id="transition-loader" class="transition-loader" aria-hidden="true">
+        <svg class="loader-symbol" viewBox="0 0 88 96" role="presentation">
+          <g class="loader-arrow loader-arrow-a">
+            <path d="M18 45A28 28 0 0 1 62 24" />
+            <path class="arrow-head" d="M58 11 77 28 58 45Z" />
+          </g>
+          <g class="loader-arrow loader-arrow-b">
+            <path d="M70 51A28 28 0 0 1 26 72" />
+            <path class="arrow-head" d="M30 85 11 68 30 51Z" />
+          </g>
+        </svg>
+        <span>reCAPTCHA</span>
+      </div>
+
+      <div class="cursor-label" aria-hidden="true">BEGIN</div>
+      <div class="noise" aria-hidden="true"></div>
+    </main>
+    <script defer src="./assets/app.js"></script>
+  </body>
+</html>

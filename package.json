@@ -1,0 +1,21 @@
+{
+  "name": "captcha-after-human",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "bundle": "esbuild src/main.js --bundle --format=iife --target=es2020 --outfile=assets/app.js --loader:.css=css && mkdir -p public/assets && cp assets/app.js assets/app.css public/assets/",
+    "dev": "npm run bundle && vite",
+    "build": "npm run bundle && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.179.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.37.1",
+    "@openai/sites-vite-plugin": "^0.1.0",
+    "esbuild": "^0.28.2",
+    "vite": "^8.0.13"
+  }
+}
