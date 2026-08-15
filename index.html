@@ -23,16 +23,7 @@
     <section id="opener" class="opener is-loading" aria-label="CAPTCHA After Human introduction">
       <canvas id="opener-canvas" aria-hidden="true"></canvas>
       <video id="opener-video" class="opener-video" src="./opener/human-hologram.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
-      <div class="opener-captcha-graphics" aria-hidden="true">
-        <i class="captcha-orbit captcha-orbit-a"></i>
-        <i class="captcha-orbit captcha-orbit-b"></i>
-        <i class="captcha-orbit captcha-orbit-c"></i>
-        <i class="captcha-scan"></i>
-        <span class="captcha-node captcha-node-a"></span>
-        <span class="captcha-node captcha-node-b"></span>
-        <span class="captcha-node captcha-node-c"></span>
-        <span class="captcha-node captcha-node-d"></span>
-      </div>
+      <video id="opener-video-ghost" class="opener-video opener-video-ghost" src="./opener/human-hologram-alpha.webm" muted playsinline preload="auto" aria-hidden="true"></video>
       <pre class="opener-code opener-code-left" aria-hidden="true"><code>const assertion = await navigator.credentials.get({
   publicKey: {
     challenge,
@@ -46,7 +37,6 @@
   body: JSON.stringify(assertion)
 });</code></pre>
       <p id="opener-copy" class="opener-copy" aria-live="polite"></p>
-      <div class="opener-progress" aria-hidden="true"><i id="opener-progress-fill"></i></div>
 
       <button id="opener-enter" class="opener-enter" type="button" disabled>
         <span>ENTER</span><small id="opener-load-value" aria-hidden="true"></small>

@@ -34828,11 +34828,13 @@ void main() {
   var opener = document.querySelector("#opener");
   var openerCanvas = document.querySelector("#opener-canvas");
   var openerVideo = document.querySelector("#opener-video");
+  var openerGhostVideo = document.querySelector("#opener-video-ghost");
   var openerAudio = document.querySelector("#opener-audio");
   var openerEnter = document.querySelector("#opener-enter");
   var openerCopy = document.querySelector("#opener-copy");
   var openerLoadValue = document.querySelector("#opener-load-value");
-  var OPENER_DURATION = reducedMotion ? 2.4 : 10;
+  var OPENER_DURATION = reducedMotion ? 2.4 : 15.6;
+  var OPENER_VIDEO_START = 4.15;
   var HUMAN_QUESTION = "Are you a human?";
   var AI_QUESTION = "Are you an AI?";
   var QUESTION_PREFIX = "Are you ";
@@ -34942,6 +34944,7 @@ void main() {
     if (openerFinished) return;
     openerFinished = true;
     openerVideo.pause();
+    openerGhostVideo.pause();
     openerAudio.pause();
     opener.classList.add("is-exiting");
     document.body.classList.add("opener-complete");
@@ -34957,32 +34960,44 @@ void main() {
     openerStartedAt = performance.now();
     opener.classList.add("is-running");
     openerVideo.currentTime = 0;
+    openerGhostVideo.currentTime = 0;
     openerAudio.currentTime = 0;
     if (!reducedMotion) {
-      openerVideo.playbackRate = 0.74;
-      openerAudio.playbackRate = 0.874;
+      openerVideo.playbackRate = 1;
+      openerGhostVideo.playbackRate = 1;
+      openerAudio.playbackRate = 0.72;
     }
-    openerVideo.play().catch(() => {
-    });
     openerAudio.play().catch(() => {
     });
+    if (reducedMotion) {
+      openerVideo.play().catch(() => {
+      });
+      return;
+    }
+    window.setTimeout(() => {
+      if (openerFinished) return;
+      openerVideo.play().catch(() => {
+      });
+      openerGhostVideo.play().catch(() => {
+      });
+    }, OPENER_VIDEO_START * 1e3);
   }
   openerEnter.addEventListener("click", startOpener);
   function typewriterText(elapsed) {
     if (reducedMotion) return elapsed < 1.2 ? HUMAN_QUESTION : AI_QUESTION;
-    if (elapsed < 7.65) return "";
-    if (elapsed < 8.55) {
-      const length = Math.floor(MathUtils.mapLinear(elapsed, 7.65, 8.55, 0, HUMAN_QUESTION.length + 0.99));
+    if (elapsed < 12.25) return "";
+    if (elapsed < 13.35) {
+      const length = Math.floor(MathUtils.mapLinear(elapsed, 12.25, 13.35, 0, HUMAN_QUESTION.length + 0.99));
       return HUMAN_QUESTION.slice(0, length);
     }
-    if (elapsed < 8.75) return HUMAN_QUESTION;
-    if (elapsed < 9.1) {
-      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 8.75, 9.1, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
+    if (elapsed < 13.75) return HUMAN_QUESTION;
+    if (elapsed < 14.2) {
+      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 13.75, 14.2, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
       return HUMAN_QUESTION.slice(0, HUMAN_QUESTION.length - erase);
     }
-    if (elapsed < 9.45) {
+    if (elapsed < 14.75) {
       const suffix = AI_QUESTION.slice(QUESTION_PREFIX.length);
-      const length = Math.floor(MathUtils.mapLinear(elapsed, 9.1, 9.45, 0, suffix.length + 0.99));
+      const length = Math.floor(MathUtils.mapLinear(elapsed, 14.2, 14.75, 0, suffix.length + 0.99));
       return QUESTION_PREFIX + suffix.slice(0, length);
     }
     return AI_QUESTION;
@@ -34991,15 +35006,14 @@ void main() {
     if (openerFinished) return;
     const idle = now * 1e-3;
     const elapsed = openerStartedAt === null ? 0 : (now - openerStartedAt) / 1e3;
-    const progress = Math.min(1, elapsed / OPENER_DURATION);
     if (openerModelReady && openerModel) {
       const activeTime = openerStartedAt === null ? idle * 0.34 : elapsed;
-      openerModel.rotation.y = activeTime * (openerStartedAt === null ? 0.72 : 2.02);
+      openerModel.rotation.y = activeTime * (openerStartedAt === null ? 0.72 : 2.76);
       openerModel.rotation.x = Math.sin(activeTime * 0.78) * 0.1;
       openerModel.rotation.z = Math.sin(activeTime * 0.42) * 0.035;
       openerModel.position.x = Math.sin(activeTime * 0.7) * 0.06;
       openerModel.position.y = Math.sin(activeTime * 0.84) * 0.08;
-      const scale = openerStartedAt === null ? 0.48 : 0.47 + Math.sin(progress * Math.PI) * 0.025;
+      const scale = openerStartedAt === null ? 0.52 : 0.57 + Math.sin(Math.min(1, elapsed / 4.15) * Math.PI) * 0.025;
       openerModel.scale.setScalar(scale);
       openerKey.position.x = Math.sin(activeTime * 1.05) * 4.2;
       openerRim.position.x = -3.2 + Math.cos(activeTime * 0.72) * 1.2;
@@ -35011,7 +35025,6 @@ void main() {
         openerCopy.textContent = nextText;
         openerCopy.classList.toggle("is-visible", Boolean(nextText));
       }
-      opener.style.setProperty("--opener-progress", progress);
       if (elapsed >= OPENER_DURATION) finishOpener();
     }
     openerRenderer.render(openerLogoScene, openerLogoCamera);

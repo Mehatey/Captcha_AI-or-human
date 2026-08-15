@@ -46,7 +46,6 @@ body.opener-complete #experience {
 }
 
 .opener {
-  --opener-progress: 0;
   position: fixed;
   z-index: 1000;
   inset: 0;
@@ -65,14 +64,12 @@ body.opener-complete #experience {
 .opener.is-exiting { opacity: 0; filter: brightness(1.8) blur(14px); transform: scale(1.05); pointer-events: none; }
 
 #opener-canvas,
-.opener-video,
-.opener-captcha-ui,
-.opener-captcha-graphics {
+.opener-video {
   position: absolute;
-  inset: 0;
 }
 
 #opener-canvas {
+  inset: 0;
   z-index: 3;
   width: 100%;
   height: 100%;
@@ -80,23 +77,39 @@ body.opener-complete #experience {
   transition: opacity 900ms 180ms ease;
 }
 
-.opener.is-running #opener-canvas { animation: opener-logo-phase 3.2s cubic-bezier(0.76, 0, 0.24, 1) both; }
+.opener.is-running #opener-canvas { animation: opener-logo-phase 4.55s cubic-bezier(0.76, 0, 0.24, 1) both; }
 
 .opener-video {
-  z-index: 1;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  width: min(60vw, 900px);
+  height: auto;
+  max-height: 72vh;
   object-fit: contain;
   object-position: center;
   opacity: 0;
-  filter: none;
+  filter: drop-shadow(0 0 28px rgba(79, 207, 232, 0.1));
   mix-blend-mode: normal;
-  transform: none;
+  transform: translate(-50%, -50%);
+  -webkit-mask-image: radial-gradient(ellipse 48% 62% at 50% 50%, #000 34%, rgba(0,0,0,0.97) 58%, rgba(0,0,0,0.55) 76%, transparent 98%);
+  mask-image: radial-gradient(ellipse 48% 62% at 50% 50%, #000 34%, rgba(0,0,0,0.97) 58%, rgba(0,0,0,0.55) 76%, transparent 98%);
 }
 
-.opener.is-running .opener-video {
-  animation: opener-video 5s 2.4s cubic-bezier(0.45, 0, 0.25, 1) both;
+.opener.is-running #opener-video {
+  animation: opener-video 8.15s 3.8s cubic-bezier(0.45, 0, 0.25, 1) both;
+}
+
+.opener-video-ghost {
+  z-index: 3;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 0 18px rgba(71, 223, 255, 0.38)) hue-rotate(-8deg) saturate(1.3);
+  -webkit-mask-image: radial-gradient(ellipse 48% 62% at 50% 50%, #000 30%, rgba(0,0,0,0.9) 72%, transparent 98%);
+  mask-image: radial-gradient(ellipse 48% 62% at 50% 50%, #000 30%, rgba(0,0,0,0.9) 72%, transparent 98%);
+}
+
+.opener.is-running .opener-video-ghost {
+  animation: opener-ghost 7.65s 4.05s steps(1, end) both;
 }
 
 .opener-captcha-graphics {
@@ -191,10 +204,10 @@ body.opener-complete #experience {
   pointer-events: none;
 }
 
-.opener-code-left { top: 23%; left: 3vw; }
-.opener-code-right { right: 3vw; bottom: 24%; }
-.opener.is-running .opener-code-left { animation: opener-code-phase 4s 2.8s steps(10, end) both; }
-.opener.is-running .opener-code-right { animation: opener-code-phase 3.8s 3.2s steps(10, end) both; }
+.opener-code-left { top: 28%; left: 5vw; }
+.opener-code-right { right: 5vw; bottom: 28%; }
+.opener.is-running .opener-code-left { animation: opener-code-phase 7.5s 4.3s steps(14, end) both; }
+.opener.is-running .opener-code-right { animation: opener-code-phase 7.2s 4.55s steps(14, end) both; }
 
 .opener-captcha-ui {
   z-index: 2;
@@ -384,19 +397,41 @@ body.opener-complete #experience {
 }
 
 @keyframes opener-video {
-  0%, 6% { opacity: 0; }
-  16%, 82% { opacity: 1; }
+  0%, 5% { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  14%, 94% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   100% { opacity: 0; }
 }
 @keyframes opener-logo-phase {
-  0% { opacity: 0; transform: scale(0.92); }
-  10%, 72% { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(0.82); }
+  0% { opacity: 0; transform: scale(0.9); }
+  8%, 78% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.78); }
 }
 @keyframes opener-code-phase {
   0%, 10% { opacity: 0; clip-path: inset(0 100% 0 0); }
-  24%, 76% { opacity: 1; clip-path: inset(0); }
+  20%, 78% { opacity: 0.72; clip-path: inset(0); }
   100% { opacity: 0; clip-path: inset(100% 0 0); }
+}
+@keyframes opener-ghost {
+  0%, 7%, 11%, 19%, 23%, 34%, 38%, 51%, 55%, 66%, 70%, 83%, 87%, 100% {
+    opacity: 0;
+    clip-path: inset(0);
+    transform: translate(-50%, -50%);
+  }
+  8%, 20%, 35%, 52%, 67%, 84% {
+    opacity: 0.45;
+    clip-path: inset(8% 0 65% 0);
+    transform: translate(calc(-50% + 9px), calc(-50% - 3px));
+  }
+  9%, 21%, 36%, 53%, 68%, 85% {
+    opacity: 0.22;
+    clip-path: inset(42% 0 30% 0);
+    transform: translate(calc(-50% - 12px), calc(-50% + 4px));
+  }
+  10%, 22%, 37%, 54%, 69%, 86% {
+    opacity: 0.58;
+    clip-path: inset(72% 0 8% 0);
+    transform: translate(calc(-50% + 5px), calc(-50% - 2px));
+  }
 }
 @keyframes captcha-orbit { to { transform: rotate(360deg); } }
 @keyframes captcha-scan { to { transform: translateY(320px); opacity: 0.28; } }
@@ -417,7 +452,7 @@ body.opener-complete #experience {
 }
 
 @media (max-width: 760px) {
-  .opener-video { left: 0; width: 100%; }
+  .opener-video { width: min(88vw, 680px); max-height: 68vh; }
   .opener-captcha-graphics { width: 74vw; height: 74vw; }
   .opener-code { width: 24vw; font-size: 7px; line-height: 1.55; }
   .opener-code-left { left: 2vw; }
@@ -429,20 +464,17 @@ body.opener-complete #experience {
   .opener-grid { top: 50%; left: 50%; width: 43vw; transform: translate(-50%, -50%); }
   .opener-sound { right: 24px; }
   .opener-skip { right: 24px; bottom: 24px; }
-  .opener-progress { bottom: 4vh; width: 58vw; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .opener-video,
-  .opener-captcha-graphics,
-  .opener-captcha-graphics::after,
   #opener-canvas,
   .opener-code,
   .opener-checkbox i,
   .opener-grid span::after,
   .opener-sweep { animation: none !important; }
-  .opener.is-running #opener-canvas,
-  .opener.is-running .opener-captcha-graphics { opacity: 1; }
+  .opener.is-running #opener-canvas { opacity: 1; }
+  .opener.is-running #opener-video { opacity: 1; }
 }
 
 button,
