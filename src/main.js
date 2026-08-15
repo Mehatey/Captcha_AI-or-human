@@ -7,8 +7,6 @@ import './styles.css';
 const experience = document.querySelector('#experience');
 const host = document.querySelector('#webgl');
 const promptText = document.querySelector('#prompt-text');
-const currentIndex = document.querySelector('#current-index');
-const progressFill = document.querySelector('#progress-fill');
 const previousButton = document.querySelector('#previous');
 const nextButton = document.querySelector('#next');
 const generateButton = document.querySelector('#generate');
@@ -623,129 +621,71 @@ function makePaperArtwork(mode, role) {
   context.fillStyle = role ? '#edf0f4' : '#f2efe8';
   context.fillRect(0, 0, canvas.width, canvas.height);
 
-  context.globalAlpha = 0.1;
-  for (let i = 0; i < 840; i += 1) {
+  const fiberAngle = mode * 0.19 + role * 0.37;
+  context.lineCap = 'round';
+  context.globalCompositeOperation = 'multiply';
+  for (let i = 0; i < 1500; i += 1) {
     const x = random(i * 2.1) * canvas.width;
     const y = random(i * 3.7) * canvas.height;
-    const length = 4 + random(i * 5.9) * 38;
-    context.strokeStyle = i % 3 ? '#5b554d' : '#ffffff';
-    context.lineWidth = 0.35 + random(i * 7.3) * 0.8;
+    const length = 3 + random(i * 5.9) * (24 + mode * 1.4);
+    const angle = fiberAngle + (random(i * 9.1) - 0.5) * 0.34;
+    const alpha = 0.025 + random(i * 6.4) * 0.085;
+    context.strokeStyle = role
+      ? `rgba(59,77,119,${alpha})`
+      : `rgba(78,68,58,${alpha})`;
+    context.lineWidth = 0.25 + random(i * 7.3) * 0.8;
     context.beginPath();
     context.moveTo(x, y);
-    context.lineTo(x + length, y + (random(i * 9.1) - 0.5) * 2.5);
+    context.quadraticCurveTo(
+      x + Math.cos(angle) * length * 0.45,
+      y + Math.sin(angle) * length * 0.45 + (random(i * 11.8) - 0.5) * 2.8,
+      x + Math.cos(angle) * length,
+      y + Math.sin(angle) * length,
+    );
     context.stroke();
   }
 
-  context.globalAlpha = 0;
-  context.lineWidth = role ? 2.1 : 2.8;
-  context.strokeStyle = role ? '#5276c7' : '#665a50';
-  context.fillStyle = role ? '#597ee0' : '#6e6256';
-  const cx = 256 + (role ? 22 : -18);
-  const cy = 360;
-  if (mode === 0) {
-    context.globalAlpha = role ? 0.075 : 0.09;
-    for (let mark = 0; mark < 38; mark += 1) {
-      const x = 34 + random(mark * 4.7) * 444;
-      const y = 30 + random(mark * 8.9) * 660;
-      const drift = (random(mark * 13.1) - 0.5) * 92;
-      context.beginPath();
-      context.moveTo(x, y);
-      context.bezierCurveTo(x + drift * 0.3, y - 7, x + drift * 0.7, y + 9, x + drift, y + (random(mark * 7.2) - 0.5) * 20);
-      context.stroke();
-    }
-  } else if (mode === 1) {
-    for (let i = 0; i < 22; i += 1) {
-      const x = 28 + random(i * 4.2) * 456;
-      const y = 30 + random(i * 8.3) * 660;
-      context.beginPath();
-      context.moveTo(x, y);
-      context.lineTo(x + (random(i * 3.1) - 0.5) * 150, y);
-      context.lineTo(x + (random(i * 6.2) - 0.5) * 150, y + (random(i * 9.7) - 0.5) * 170);
-      context.stroke();
-      context.fillRect(x - 3, y - 3, 6, 6);
-    }
-  } else if (mode === 2) {
-    for (let i = 0; i < 28; i += 1) {
-      context.beginPath();
-      context.moveTo(cx, 690);
-      context.bezierCurveTo(cx + (random(i) - 0.5) * 90, 520, random(i * 2.1) * 512, 260, random(i * 4.3) * 512, 20);
-      context.stroke();
-    }
-  } else if (mode === 3) {
-    context.lineCap = 'round';
-    for (let i = 0; i < 34; i += 1) {
-      const x = 18 + random(i * 2.4) * 476;
-      context.lineWidth = 1 + random(i * 4.5) * 9;
-      context.beginPath();
-      context.moveTo(x, -20);
-      context.bezierCurveTo(x - 30, 220, x + 40, 460, x + (random(i * 8.8) - 0.5) * 60, 750);
-      context.stroke();
-    }
-  } else if (mode === 4) {
-    for (let i = -3; i < 12; i += 1) {
-      context.beginPath();
-      context.moveTo(i * 72, 0);
-      context.lineTo(512 - i * 27, 720);
-      context.lineTo(256 + i * 18, 360);
-      context.stroke();
-    }
-  } else if (mode === 5) {
-    for (let i = 0; i < 12; i += 1) {
-      const gradient = context.createRadialGradient(random(i) * 512, random(i * 3.2) * 720, 0, random(i) * 512, random(i * 3.2) * 720, 55 + random(i * 8.1) * 120);
-      gradient.addColorStop(0, 'rgba(18,16,20,.34)');
-      gradient.addColorStop(1, 'rgba(18,16,20,0)');
-      context.fillStyle = gradient;
-      context.fillRect(0, 0, 512, 720);
-    }
-  } else if (mode === 6) {
-    for (let wave = 0; wave < 18; wave += 1) {
-      context.beginPath();
-      for (let x = 0; x <= 512; x += 8) {
-        const y = 70 + wave * 34 + Math.sin(x * 0.024 + wave * 0.62) * (9 + wave * 0.7);
-        if (x) context.lineTo(x, y); else context.moveTo(x, y);
-      }
-      context.stroke();
-    }
-  } else if (mode === 7) {
-    for (let i = 0; i < 260; i += 1) {
-      const x = random(i * 2.7) * 512;
-      const y = random(i * 4.7) * 720;
-      const radius = 0.8 + random(i * 7.2) * 4.2;
-      context.beginPath();
-      context.arc(x, y, radius, 0, Math.PI * 2);
-      context.fill();
-      if (i % 5 === 0) {
-        context.beginPath();
-        context.moveTo(x, y);
-        context.lineTo(random(i * 9.1) * 512, random(i * 11.3) * 720);
-        context.stroke();
-      }
-    }
-  } else if (mode === 8) {
-    context.lineWidth = 1.2;
-    for (let i = 0; i < 36; i += 1) {
-      let x = random(i) * 512;
-      let y = random(i * 2.9) * 720;
-      context.beginPath();
-      context.moveTo(x, y);
-      for (let segment = 0; segment < 7; segment += 1) {
-        x += (random(i * 11 + segment) - 0.5) * 62;
-        y += 22 + random(i * 17 + segment) * 42;
-        context.lineTo(x, y);
-      }
-      context.stroke();
-    }
-  } else {
-    for (let layer = 0; layer < 24; layer += 1) {
-      context.beginPath();
-      context.ellipse(cx + Math.sin(layer) * 38, cy + Math.cos(layer * 1.7) * 46, 44 + layer * 8, 70 + layer * 5, layer * 0.14, 0, Math.PI * 2);
-      context.stroke();
-    }
+  for (let i = 0; i < 54; i += 1) {
+    const x = random(2000 + i * 2.8) * canvas.width;
+    const y = random(2200 + i * 3.9) * canvas.height;
+    const radius = 24 + random(2400 + i * 5.1) * 110;
+    const mottle = context.createRadialGradient(x, y, 0, x, y, radius);
+    mottle.addColorStop(0, role ? 'rgba(75,96,145,.045)' : 'rgba(91,75,58,.05)');
+    mottle.addColorStop(1, 'rgba(0,0,0,0)');
+    context.fillStyle = mottle;
+    context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
   }
-  context.globalAlpha = 1;
+
+  for (let i = 0; i < 4200; i += 1) {
+    const x = random(4000 + i * 1.7) * canvas.width;
+    const y = random(5000 + i * 2.9) * canvas.height;
+    const light = random(6000 + i * 3.1) > 0.58;
+    const alpha = 0.025 + random(7000 + i * 4.3) * 0.07;
+    const size = 0.25 + random(8000 + i * 5.7) * 1.15;
+    context.fillStyle = light ? `rgba(255,255,255,${alpha})` : `rgba(42,37,33,${alpha})`;
+    context.fillRect(x, y, size, size);
+  }
+
+  context.globalCompositeOperation = 'screen';
+  for (let i = 0; i < 280; i += 1) {
+    const x = random(9000 + i * 2.3) * canvas.width;
+    const y = random(10000 + i * 3.5) * canvas.height;
+    const length = 12 + random(11000 + i * 4.7) * 54;
+    context.strokeStyle = `rgba(255,255,255,${0.035 + random(12000 + i) * 0.08})`;
+    context.lineWidth = 0.35 + random(13000 + i) * 0.7;
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + Math.cos(fiberAngle + 0.08) * length, y + Math.sin(fiberAngle + 0.08) * length);
+    context.stroke();
+  }
+  context.globalCompositeOperation = 'source-over';
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(1.025, 1.025);
+  texture.center.set(0.5, 0.5);
   texture.needsUpdate = true;
   return texture;
 }
@@ -761,7 +701,7 @@ function makeTornPaperGeometry(mode, role) {
   };
   const damage = 0.105 + mode * 0.011;
   const points = [];
-  const edgeSteps = 18;
+  const edgeSteps = 36;
   for (let step = 0; step <= edgeSteps; step += 1) {
     const t = step / edgeSteps;
     const cornerSoftness = Math.sin(t * Math.PI);
@@ -853,7 +793,7 @@ const paperGridMaterials = [];
     clearcoat: 0.05,
     clearcoatRoughness: 0.82,
     side: THREE.DoubleSide,
-  }, paperTexture, 0.022);
+  }, paperTexture, 0.038);
   paperMaterials.push(paperMaterial);
   paperMaterial.map = PAPER_ARTWORKS[0][index];
   const sheet = new THREE.Mesh(PAPER_GEOMETRIES[0][index], paperMaterial);
@@ -2207,8 +2147,6 @@ function goToStage(index) {
   const config = STAGES[target];
   experience.dataset.stage = config.key;
   setPaperStage(target);
-  currentIndex.textContent = String(target + 1);
-  progressFill.style.width = `${(target + 1) * 10}%`;
   chapterButtons.forEach((button, i) => button.classList.toggle('is-active', i === target));
   previousButton.classList.toggle('is-visible', target > 0);
   experience.classList.remove('is-viewing', 'is-comparing', 'is-ai-drawing');
@@ -2320,7 +2258,7 @@ function updatePaperSurfaces(elapsed) {
     if (!basePositions) return;
     const mode = geometry.userData.mode ?? stageIndex;
     const phase = sheetIndex * 2.83 + mode * 0.67;
-    const amplitude = 0.029 + mode * 0.0011;
+    const amplitude = 0.066 + mode * 0.0018;
     const breath = Math.sin(elapsed * 0.42 + phase);
     const baseRotation = (sheetIndex ? 1 : -1) * 0.006;
     sheet.position.z = -0.58 + breath * 0.016;
@@ -2329,14 +2267,23 @@ function updatePaperSurfaces(elapsed) {
     paperMaterials[sheetIndex].clearcoat = 0.05 + (breath + 1) * 0.018;
     paperEdges[sheetIndex].material.opacity = 0.38 + Math.sin(elapsed * 0.5 + phase) * 0.09;
     paperGridMaterials[sheetIndex].opacity = 0.21 + Math.sin(elapsed * 0.36 + phase * 1.2) * 0.045;
+    const artwork = paperMaterials[sheetIndex].map;
+    artwork.offset.set(
+      Math.sin(elapsed * 0.075 + phase) * 0.004,
+      Math.cos(elapsed * 0.061 + phase * 1.3) * 0.004,
+    );
+    paperMaterials[sheetIndex].bumpMap.offset.set(
+      Math.sin(elapsed * 0.052 + phase) * 0.012,
+      Math.cos(elapsed * 0.047 + phase) * 0.009,
+    );
 
     for (let vertex = 0; vertex < position.count; vertex += 1) {
       const offset = vertex * 3;
       const baseX = basePositions[offset];
       const baseY = basePositions[offset + 1];
       const baseZ = basePositions[offset + 2];
-      const horizontalEdge = clamp((Math.abs(baseX) / halfWidth - 0.58) / 0.42);
-      const verticalEdge = clamp((Math.abs(baseY) / halfHeight - 0.58) / 0.42);
+      const horizontalEdge = clamp((Math.abs(baseX) / halfWidth - 0.48) / 0.52);
+      const verticalEdge = clamp((Math.abs(baseY) / halfHeight - 0.48) / 0.52);
       const edgeInfluence = smooth(Math.max(horizontalEdge, verticalEdge));
       const driftX = (
         Math.sin(baseY * 1.52 + elapsed * 0.43 + phase)
@@ -2346,8 +2293,10 @@ function updatePaperSurfaces(elapsed) {
         Math.sin(baseX * 1.37 + elapsed * 0.37 + phase * 1.31)
         + Math.cos(baseX * 3.8 - elapsed * 0.18 + phase) * 0.3
       ) * amplitude * 0.82 * edgeInfluence;
-      const curl = Math.sin(elapsed * 0.36 + baseX * 1.8 + baseY * 0.76 + phase)
-        * 0.015 * (0.14 + edgeInfluence * 0.86);
+      const curl = (
+        Math.sin(elapsed * 0.36 + baseX * 1.8 + baseY * 0.76 + phase)
+        + Math.cos(elapsed * 0.19 - baseX * 0.73 + baseY * 1.42 + phase) * 0.42
+      ) * 0.026 * (0.14 + edgeInfluence * 0.86);
       position.setXYZ(vertex, baseX + driftX, baseY + driftY, baseZ + curl);
     }
     position.needsUpdate = true;
