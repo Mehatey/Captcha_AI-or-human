@@ -42,6 +42,7 @@ let openerTypedText = '';
 let openerModel = null;
 let openerModelReady = false;
 let openerLoadProgress = 0;
+let openerKeyBuffer = null;
 
 const openerRenderer = new THREE.WebGLRenderer({ canvas: openerCanvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
 openerRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -161,6 +162,41 @@ function finishOpener() {
   }, reducedMotion ? 120 : 1050);
 }
 
+function playOpenerKeySound(erasing = false) {
+  if (!audioContext || audioContext.state !== 'running') return;
+  if (!openerKeyBuffer) {
+    const sampleCount = Math.floor(audioContext.sampleRate * 0.038);
+    openerKeyBuffer = audioContext.createBuffer(1, sampleCount, audioContext.sampleRate);
+    const samples = openerKeyBuffer.getChannelData(0);
+    for (let index = 0; index < sampleCount; index += 1) {
+      const decay = 1 - index / sampleCount;
+      samples[index] = (Math.random() * 2 - 1) * decay * decay;
+    }
+  }
+  const now = audioContext.currentTime;
+  const noise = audioContext.createBufferSource();
+  const filter = audioContext.createBiquadFilter();
+  const noiseGain = audioContext.createGain();
+  const hammer = audioContext.createOscillator();
+  const hammerGain = audioContext.createGain();
+  noise.buffer = openerKeyBuffer;
+  filter.type = 'bandpass';
+  filter.frequency.value = erasing ? 920 : 1780;
+  filter.Q.value = erasing ? 0.7 : 1.15;
+  noiseGain.gain.setValueAtTime(erasing ? 0.026 : 0.034, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.036);
+  hammer.type = 'triangle';
+  hammer.frequency.setValueAtTime(erasing ? 230 : 410, now);
+  hammer.frequency.exponentialRampToValueAtTime(erasing ? 110 : 180, now + 0.026);
+  hammerGain.gain.setValueAtTime(erasing ? 0.014 : 0.019, now);
+  hammerGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.032);
+  noise.connect(filter).connect(noiseGain).connect(audioContext.destination);
+  hammer.connect(hammerGain).connect(audioContext.destination);
+  noise.start(now);
+  hammer.start(now);
+  hammer.stop(now + 0.038);
+}
+
 function startOpener() {
   if (openerStartedAt !== null || openerEnter.disabled) return;
   openerStartedAt = performance.now();
@@ -168,6 +204,8 @@ function startOpener() {
   openerVideo.currentTime = 0;
   openerGhostVideo.currentTime = 0;
   openerAudio.currentTime = 0;
+  audioContext ??= new (window.AudioContext || window.webkitAudioContext)();
+  audioContext.resume?.().catch?.(() => {});
   if (!reducedMotion) {
     openerVideo.playbackRate = 1;
     openerGhostVideo.playbackRate = 1;
@@ -228,6 +266,7 @@ function animateOpener(now) {
   if (openerStartedAt !== null) {
     const nextText = typewriterText(elapsed);
     if (nextText !== openerTypedText) {
+      playOpenerKeySound(nextText.length < openerTypedText.length);
       openerTypedText = nextText;
       openerCopy.textContent = nextText;
       openerCopy.classList.toggle('is-visible', Boolean(nextText));

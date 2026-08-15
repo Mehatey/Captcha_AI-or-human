@@ -24,17 +24,12 @@
       <canvas id="opener-canvas" aria-hidden="true"></canvas>
       <video id="opener-video" class="opener-video" src="./opener/human-hologram.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
       <video id="opener-video-ghost" class="opener-video opener-video-ghost" src="./opener/human-hologram-alpha.webm" muted playsinline preload="auto" aria-hidden="true"></video>
-      <pre class="opener-code opener-code-left" aria-hidden="true"><code>const assertion = await navigator.credentials.get({
-  publicKey: {
-    challenge,
-    rpId: location.hostname,
-    userVerification: "required"
-  }
-});</code></pre>
-      <pre class="opener-code opener-code-right" aria-hidden="true"><code>const response = await fetch("/verify", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(assertion)
+      <pre class="opener-code opener-code-left" aria-hidden="true"><code>const frame = new VideoFrame(human);
+const input = await preprocess(frame);
+const identity = await encoder.run({ input });</code></pre>
+      <pre class="opener-code opener-code-right" aria-hidden="true"><code>const imitation = await model.draw({
+  prompt, identity,
+  preserveHesitation: true
 });</code></pre>
       <p id="opener-copy" class="opener-copy" aria-live="polite"></p>
 

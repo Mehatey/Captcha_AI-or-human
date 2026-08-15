@@ -110,20 +110,6 @@ body.opener-complete #experience {
   filter: drop-shadow(0 0 28px rgba(79, 207, 232, 0.1));
   mix-blend-mode: normal;
   transform: translate(-50%, -50%);
-  -webkit-mask-image:
-    radial-gradient(
-      ellipse 48% 62% at 50% 50%,
-      #000 34%,
-      rgba(0, 0, 0, 0.97) 58%,
-      rgba(0, 0, 0, 0.55) 76%,
-      transparent 98%);
-  mask-image:
-    radial-gradient(
-      ellipse 48% 62% at 50% 50%,
-      #000 34%,
-      rgba(0, 0, 0, 0.97) 58%,
-      rgba(0, 0, 0, 0.55) 76%,
-      transparent 98%);
 }
 .opener.is-running #opener-video {
   animation: opener-video 8.15s 3.8s cubic-bezier(0.45, 0, 0.25, 1) both;
@@ -235,12 +221,12 @@ body.opener-complete #experience {
 .opener-code {
   position: absolute;
   z-index: 4;
-  width: min(17vw, 290px);
+  width: min(15vw, 260px);
   margin: 0;
   overflow: hidden;
   color: rgba(193, 224, 236, 0.78);
   font:
-    10px/1.75 "SFMono-Regular",
+    clamp(11px, 0.72vw, 14px)/1.62 "SFMono-Regular",
     Consolas,
     monospace;
   white-space: pre-wrap;
@@ -248,12 +234,12 @@ body.opener-complete #experience {
   pointer-events: none;
 }
 .opener-code-left {
-  top: 28%;
-  left: 5vw;
+  top: 31%;
+  left: 6vw;
 }
 .opener-code-right {
-  right: 5vw;
-  bottom: 28%;
+  right: 6vw;
+  bottom: 31%;
 }
 .opener.is-running .opener-code-left {
   animation: opener-code-phase 7.5s 4.3s steps(14, end) both;
@@ -522,14 +508,19 @@ body.opener-complete #experience {
 @keyframes opener-video {
   0%, 5% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.96);
+    transform: translate(-50%, -50%) scale(0.78);
   }
-  14%, 94% {
+  14% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -50%) scale(0.84);
+  }
+  94% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
   }
   100% {
     opacity: 0;
+    transform: translate(-50%, -50%) scale(1.12);
   }
 }
 @keyframes opener-logo-phase {
@@ -650,9 +641,9 @@ body.opener-complete #experience {
     height: 74vw;
   }
   .opener-code {
-    width: 24vw;
-    font-size: 7px;
-    line-height: 1.55;
+    width: 26vw;
+    font-size: 9px;
+    line-height: 1.5;
   }
   .opener-code-left {
     left: 2vw;
