@@ -34834,23 +34834,18 @@ void main() {
   var openerSound = document.querySelector("#opener-sound");
   var openerCopy = document.querySelector("#opener-copy");
   var openerLoadValue = document.querySelector("#opener-load-value");
-  var openerProgressFill = document.querySelector("#opener-progress-fill");
-  var OPENER_DURATION = reducedMotion ? 2.4 : 8.65;
-  var OPENER_LINES = reducedMotion ? [[0, "SO WHAT ARE WE TESTING?"], [1.05, `LET'S FIND OUT.`]] : [
-    [0, "HUMAN OR MACHINE?"],
-    [1.65, "BOTH CAN SEE."],
-    [3, "BOTH CAN DRAW."],
-    [4.35, "BOTH CAN REMEMBER."],
-    [5.9, "SO WHAT ARE WE TESTING?"],
-    [7.55, `LET'S FIND OUT.`]
-  ];
+  var OPENER_DURATION = reducedMotion ? 2.4 : 10;
+  var HUMAN_QUESTION = "Are you a human?";
+  var AI_QUESTION = "Are you an AI?";
+  var QUESTION_PREFIX = "Are you ";
   var openerStartedAt = null;
   var openerFinished = false;
-  var openerLineIndex = -1;
+  var openerTypedText = "";
   var openerModel = null;
   var openerModelReady = false;
   var openerSoundEnabled = true;
   var openerLoadProgress = 0;
+  var openerModelBaseX = 0;
   var openerRenderer = new WebGLRenderer({ canvas: openerCanvas, alpha: true, antialias: true, powerPreference: "high-performance" });
   openerRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   openerRenderer.outputColorSpace = SRGBColorSpace;
@@ -34879,7 +34874,6 @@ void main() {
     openerLoadProgress = Math.max(openerLoadProgress, Math.min(1, value));
     const percent = Math.round(openerLoadProgress * 100);
     openerLoadValue.textContent = `${String(percent).padStart(2, "0")}%`;
-    openerProgressFill.style.transform = `scaleX(${openerLoadProgress})`;
     if (openerLoadProgress >= 1) {
       opener.classList.remove("is-loading");
       opener.classList.add("is-ready");
@@ -34895,11 +34889,14 @@ void main() {
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
       root.position.sub(center);
-      root.scale.setScalar(4.9 / Math.max(size.x, size.y, size.z, 1e-3));
+      root.scale.setScalar(4.8 / Math.max(size.x, size.y, size.z, 1e-3));
       root.traverse((child) => {
         if (!child.isMesh) return;
-        child.material.envMapIntensity = 1.7;
-        child.material.roughness = Math.min(child.material.roughness ?? 0.5, 0.42);
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach((material) => {
+          material.envMapIntensity = 2.4;
+          material.roughness = Math.min(material.roughness ?? 0.5, 0.28);
+        });
       });
       openerModel = new Group();
       openerModel.add(root);
@@ -34944,6 +34941,9 @@ void main() {
     openerRenderer.setSize(window.innerWidth, window.innerHeight, false);
     openerLogoCamera.aspect = window.innerWidth / window.innerHeight;
     openerLogoCamera.updateProjectionMatrix();
+    const viewHeight = 2 * Math.tan(MathUtils.degToRad(openerLogoCamera.fov * 0.5)) * openerLogoCamera.position.z;
+    const viewWidth = viewHeight * openerLogoCamera.aspect;
+    openerModelBaseX = window.innerWidth <= 760 ? 0 : -viewWidth * 0.25;
   }
   function finishOpener() {
     if (openerFinished) return;
@@ -34965,6 +34965,10 @@ void main() {
     opener.classList.add("is-running");
     openerVideo.currentTime = 0;
     openerAudio.currentTime = 0;
+    if (!reducedMotion) {
+      openerVideo.playbackRate = 0.74;
+      openerAudio.playbackRate = 0.874;
+    }
     openerVideo.play().catch(() => {
     });
     if (openerSoundEnabled) openerAudio.play().catch(() => {
@@ -34980,6 +34984,30 @@ void main() {
     if (openerSoundEnabled && openerStartedAt !== null && !openerFinished) openerAudio.play().catch(() => {
     });
   });
+  function typewriterText(elapsed) {
+    if (reducedMotion) return elapsed < 1.2 ? HUMAN_QUESTION : AI_QUESTION;
+    if (elapsed < 0.45) return "";
+    if (elapsed < 2.25) {
+      const length = Math.floor(MathUtils.mapLinear(elapsed, 0.45, 2.25, 0, HUMAN_QUESTION.length + 0.99));
+      return HUMAN_QUESTION.slice(0, length);
+    }
+    if (elapsed < 3.2) return HUMAN_QUESTION;
+    if (elapsed < 4.05) {
+      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 3.2, 4.05, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
+      return HUMAN_QUESTION.slice(0, HUMAN_QUESTION.length - erase);
+    }
+    if (elapsed < 4.75) {
+      const suffix = AI_QUESTION.slice(QUESTION_PREFIX.length);
+      const length = Math.floor(MathUtils.mapLinear(elapsed, 4.05, 4.75, 0, suffix.length + 0.99));
+      return QUESTION_PREFIX + suffix.slice(0, length);
+    }
+    if (elapsed < 7.75) return AI_QUESTION;
+    if (elapsed < 8.85) {
+      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 7.75, 8.85, 0, AI_QUESTION.length));
+      return AI_QUESTION.slice(0, AI_QUESTION.length - erase);
+    }
+    return "";
+  }
   function animateOpener(now) {
     if (openerFinished) return;
     const idle = now * 1e-3;
@@ -34987,26 +35015,21 @@ void main() {
     const progress = Math.min(1, elapsed / OPENER_DURATION);
     if (openerModelReady && openerModel) {
       const activeTime = openerStartedAt === null ? idle * 0.34 : elapsed;
-      openerModel.rotation.y = activeTime * (openerStartedAt === null ? 0.82 : 2.35);
-      openerModel.rotation.x = Math.sin(activeTime * 0.82) * 0.13;
-      openerModel.rotation.z = Math.sin(activeTime * 0.46) * 0.055;
-      openerModel.position.x = openerStartedAt === null ? 0 : Math.sin(elapsed * 0.68) * 0.34;
-      openerModel.position.y = Math.sin(activeTime * 0.88) * 0.12;
-      const finale = openerStartedAt === null ? 0 : MathUtils.smoothstep(progress, 0.88, 1);
-      const scale = (openerStartedAt === null ? 0.92 : 0.96 + Math.sin(progress * Math.PI) * 0.09) + finale * 0.22;
+      openerModel.rotation.y = activeTime * (openerStartedAt === null ? 0.72 : 2.02);
+      openerModel.rotation.x = Math.sin(activeTime * 0.78) * 0.1;
+      openerModel.rotation.z = Math.sin(activeTime * 0.42) * 0.035;
+      openerModel.position.x = openerModelBaseX + Math.sin(activeTime * 0.7) * 0.08;
+      openerModel.position.y = Math.sin(activeTime * 0.84) * 0.08;
+      const scale = openerStartedAt === null ? 0.68 : 0.67 + Math.sin(progress * Math.PI) * 0.035;
       openerModel.scale.setScalar(scale);
+      openerKey.position.x = openerModelBaseX + Math.sin(activeTime * 1.05) * 4.2;
+      openerRim.position.x = openerModelBaseX - 3.2 + Math.cos(activeTime * 0.72) * 1.2;
     }
     if (openerStartedAt !== null) {
-      let nextLine = 0;
-      OPENER_LINES.forEach(([at], index) => {
-        if (elapsed >= at) nextLine = index;
-      });
-      if (nextLine !== openerLineIndex) {
-        openerLineIndex = nextLine;
-        openerCopy.textContent = OPENER_LINES[nextLine][1];
-        openerCopy.classList.remove("is-changing");
-        void openerCopy.offsetWidth;
-        openerCopy.classList.add("is-changing");
+      const nextText = typewriterText(elapsed);
+      if (nextText !== openerTypedText) {
+        openerTypedText = nextText;
+        openerCopy.textContent = nextText;
       }
       opener.style.setProperty("--opener-progress", progress);
       if (elapsed >= OPENER_DURATION) finishOpener();
