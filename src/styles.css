@@ -543,33 +543,186 @@ button {
 
 .transition-loader.is-visible[data-variant="0"] .loader-arrow-a { animation: loader-orbit-a 760ms cubic-bezier(0.65, 0, 0.35, 1) infinite; }
 .transition-loader.is-visible[data-variant="0"] .loader-arrow-b { animation: loader-orbit-b 760ms cubic-bezier(0.65, 0, 0.35, 1) infinite; }
-.transition-loader.is-visible[data-variant="1"] .loader-symbol { animation: loader-prism 820ms cubic-bezier(0.76, 0, 0.24, 1) infinite; }
-.transition-loader.is-visible[data-variant="1"] .loader-arrow-b { animation: loader-counter 820ms linear infinite; }
-.transition-loader.is-visible[data-variant="2"] .loader-arrow path:first-child { stroke-dasharray: 18 12; animation: loader-dash 560ms linear infinite; }
-.transition-loader.is-visible[data-variant="2"] .loader-arrow-a { animation: loader-breathe 700ms ease-in-out infinite alternate; }
-.transition-loader.is-visible[data-variant="3"] .loader-symbol { animation: loader-flip 900ms cubic-bezier(0.65, 0, 0.35, 1) infinite; }
-.transition-loader.is-visible[data-variant="3"] .loader-arrow-b { color: #ff6f61; }
-.transition-loader.is-visible[data-variant="4"] .loader-arrow-a { animation: loader-fold-a 780ms ease-in-out infinite alternate; }
-.transition-loader.is-visible[data-variant="4"] .loader-arrow-b { animation: loader-fold-b 780ms ease-in-out infinite alternate; color: #a6ff7d; }
-.transition-loader.is-visible[data-variant="5"] .loader-symbol { animation: loader-vortex 700ms cubic-bezier(0.65, 0, 0.35, 1) infinite; }
-.transition-loader.is-visible[data-variant="5"] .loader-arrow-a { color: #ff765e; animation: loader-shear-a 510ms ease-in-out infinite alternate; }
-.transition-loader.is-visible[data-variant="5"] .loader-arrow-b { color: #7d8cff; animation: loader-shear-b 510ms ease-in-out infinite alternate; }
-.transition-loader.is-visible[data-variant="6"] .loader-arrow path:first-child { stroke-dasharray: 5 7 21 4; animation: loader-dash-fast 300ms linear infinite; }
-.transition-loader.is-visible[data-variant="6"] .loader-arrow-a { animation: loader-fracture-a 440ms steps(4, end) infinite; }
-.transition-loader.is-visible[data-variant="6"] .loader-arrow-b { color: #ff3f8e; animation: loader-fracture-b 440ms steps(4, end) infinite; }
-.transition-loader.is-visible[data-variant="6"] > span { animation: loader-word-scan 440ms steps(3, end) infinite; }
-.transition-loader.is-visible[data-variant="7"] .loader-symbol { animation: loader-tesseract 660ms cubic-bezier(0.76, 0, 0.24, 1) infinite; filter: drop-shadow(12px 0 0 #00e5ff) drop-shadow(-12px 0 0 #ff3f8e); }
-.transition-loader.is-visible[data-variant="7"] .loader-arrow-a { animation: loader-orbit-a 330ms linear infinite; }
-.transition-loader.is-visible[data-variant="7"] .loader-arrow-b { animation: loader-orbit-b 270ms linear infinite; }
-.transition-loader.is-visible[data-variant="8"] .loader-symbol { animation: loader-singularity 760ms cubic-bezier(0.8, 0, 0.2, 1) infinite; }
-.transition-loader.is-visible[data-variant="8"] .loader-arrow-a { color: #d8ff45; animation: loader-eject-a 520ms ease-in infinite; }
-.transition-loader.is-visible[data-variant="8"] .loader-arrow-b { color: #8da4ff; animation: loader-eject-b 520ms ease-in infinite; }
-.transition-loader.is-visible[data-variant="8"] > span { animation: loader-word-stretch 760ms ease-in-out infinite; }
-.transition-loader.is-visible[data-variant="9"] { animation: loader-field-invert 480ms steps(2, end) infinite; }
-.transition-loader.is-visible[data-variant="9"] .loader-symbol { animation: loader-collapse 480ms cubic-bezier(0.9, 0, 0.1, 1) infinite; filter: drop-shadow(0 0 22px currentColor); }
-.transition-loader.is-visible[data-variant="9"] .loader-arrow-a { color: #ff4b2b; animation: loader-final-a 240ms linear infinite; }
-.transition-loader.is-visible[data-variant="9"] .loader-arrow-b { color: #4b6fff; animation: loader-final-b 190ms linear infinite; }
-.transition-loader.is-visible[data-variant="9"] > span { animation: loader-word-final 480ms steps(4, end) infinite; }
+
+.transition-art {
+  position: absolute;
+  inset: 0;
+  display: none;
+  overflow: hidden;
+  perspective: 900px;
+}
+
+.transition-loader:not([data-variant="0"]) .loader-symbol,
+.transition-loader:not([data-variant="0"]) > span {
+  display: none;
+}
+
+.transition-loader:not([data-variant="0"]) .transition-art {
+  display: block;
+}
+
+.transition-bit {
+  --x: 50%;
+  --y: 50%;
+  --d: 0ms;
+  --r: 0deg;
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+  display: block;
+  animation-delay: var(--d) !important;
+}
+
+.transition-bit:nth-child(1) { --x: 8%; --y: 20%; --d: -70ms; --r: -72deg; }
+.transition-bit:nth-child(2) { --x: 19%; --y: 74%; --d: -190ms; --r: -51deg; }
+.transition-bit:nth-child(3) { --x: 29%; --y: 38%; --d: -310ms; --r: -32deg; }
+.transition-bit:nth-child(4) { --x: 38%; --y: 86%; --d: -430ms; --r: -18deg; }
+.transition-bit:nth-child(5) { --x: 46%; --y: 14%; --d: -550ms; --r: -6deg; }
+.transition-bit:nth-child(6) { --x: 54%; --y: 60%; --d: -670ms; --r: 9deg; }
+.transition-bit:nth-child(7) { --x: 62%; --y: 31%; --d: -790ms; --r: 22deg; }
+.transition-bit:nth-child(8) { --x: 70%; --y: 82%; --d: -910ms; --r: 37deg; }
+.transition-bit:nth-child(9) { --x: 77%; --y: 12%; --d: -1030ms; --r: 49deg; }
+.transition-bit:nth-child(10) { --x: 84%; --y: 55%; --d: -1150ms; --r: 61deg; }
+.transition-bit:nth-child(11) { --x: 91%; --y: 29%; --d: -1270ms; --r: 74deg; }
+.transition-bit:nth-child(12) { --x: 95%; --y: 91%; --d: -1390ms; --r: 86deg; }
+
+/* Machine: a rigid scan resolves the field into executable bars. */
+.transition-loader[data-variant="1"] { background: #263aaf; backdrop-filter: none; }
+.transition-loader[data-variant="1"] .transition-art::before {
+  position: absolute;
+  inset: -15%;
+  content: "";
+  background-image: linear-gradient(rgba(216,255,69,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-size: 42px 42px;
+  animation: transition-machine-grid 900ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+.transition-loader[data-variant="1"] .transition-art::after {
+  position: absolute;
+  inset: 0 auto 0 -18%;
+  width: 15%;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(216,255,69,0.82), transparent);
+  box-shadow: 0 0 55px rgba(216,255,69,0.52);
+  animation: transition-machine-scan 900ms ease-in-out both;
+}
+.transition-loader[data-variant="1"] .transition-bit {
+  width: 7vw;
+  height: 2px;
+  background: #d8ff45;
+  box-shadow: 0 8px rgba(255,255,255,0.38), 0 -8px rgba(255,255,255,0.2);
+  animation: transition-machine-code 540ms steps(5, end) infinite alternate;
+}
+
+/* Nature: points root, branch, and exhale outward. */
+.transition-loader[data-variant="2"] { background: #12332b; backdrop-filter: none; }
+.transition-loader[data-variant="2"] .transition-art::before,
+.transition-loader[data-variant="2"] .transition-art::after {
+  --mirror: 1;
+  position: absolute;
+  left: 50%;
+  bottom: -34%;
+  width: 48vmin;
+  height: 74vmin;
+  border: 2px solid rgba(76,240,155,0.72);
+  border-width: 2px 0 0 2px;
+  border-radius: 72% 18% 54% 9%;
+  content: "";
+  transform-origin: 0 100%;
+  animation: transition-nature-grow 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.transition-loader[data-variant="2"] .transition-art::after { --mirror: -1; left: 48%; animation-delay: 90ms; }
+.transition-loader[data-variant="2"] .transition-bit {
+  width: 15px;
+  height: 8px;
+  border-radius: 100% 0 100% 0;
+  background: #a6ff7d;
+  animation: transition-nature-leaf 760ms ease-in-out infinite alternate;
+}
+
+/* Weather: pressure drops, rain cuts downward, a ripple answers. */
+.transition-loader[data-variant="3"] { background: #e8a89c; backdrop-filter: none; }
+.transition-loader[data-variant="3"] .transition-art::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: repeating-linear-gradient(104deg, transparent 0 28px, rgba(59,101,255,0.58) 29px 31px, transparent 32px 49px);
+  animation: transition-rain 520ms linear infinite;
+}
+.transition-loader[data-variant="3"] .transition-art::after {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  width: 38vw;
+  height: 8vw;
+  border: 2px solid rgba(40,23,34,0.68);
+  border-radius: 50%;
+  content: "";
+  transform: translateX(-50%);
+  animation: transition-ripple 850ms ease-out infinite;
+}
+.transition-loader[data-variant="3"] .transition-bit { width: 2px; height: 22vh; background: rgba(240,216,226,0.78); transform: rotate(14deg); animation: transition-rain-bit 580ms linear infinite; }
+
+/* Mirror: two reflective planes meet, invert, and split. */
+.transition-loader[data-variant="4"] { background: #09090a; backdrop-filter: none; }
+.transition-loader[data-variant="4"] .transition-art::before,
+.transition-loader[data-variant="4"] .transition-art::after {
+  position: absolute;
+  inset: 7% 50% 7% 4%;
+  content: "";
+  background: linear-gradient(110deg, #1b1c25, #edf2ff 46%, #778cff 49%, #0f1118 54%);
+  box-shadow: 0 0 40px rgba(154,171,255,0.42);
+  transform-origin: 100% 50%;
+  animation: transition-mirror-left 900ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+.transition-loader[data-variant="4"] .transition-art::after { inset: 7% 4% 7% 50%; transform-origin: 0 50%; animation-name: transition-mirror-right; }
+.transition-loader[data-variant="4"] .transition-bit { top: 50%; width: 3px; height: 38vh; background: rgba(255,255,255,0.68); box-shadow: 0 0 18px #9aabff; animation: transition-mirror-glint 620ms ease-in-out infinite alternate; }
+
+/* Shadow: the missing center briefly consumes the entire page. */
+.transition-loader[data-variant="5"] { background: #57535a; backdrop-filter: none; }
+.transition-loader[data-variant="5"] .transition-art::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34vmin;
+  height: 34vmin;
+  border-radius: 47% 53% 38% 62%;
+  content: "";
+  background: #08080a;
+  box-shadow: 0 0 0 3px rgba(216,210,199,0.5), 0 24px 70px rgba(0,0,0,0.58);
+  animation: transition-shadow 900ms cubic-bezier(0.8, 0, 0.2, 1) both;
+}
+.transition-loader[data-variant="5"] .transition-bit { width: 3px; height: 32vh; background: linear-gradient(transparent, #111, transparent); transform: rotate(var(--r)); transform-origin: 50% 100%; animation: transition-shadow-ray 700ms ease-in-out infinite alternate; }
+
+/* Echo: one impulse leaves a widening field of delayed rings. */
+.transition-loader[data-variant="6"] { background: #cac0ee; backdrop-filter: none; }
+.transition-loader[data-variant="6"] .transition-art::before {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  content: "";
+  background: #281722;
+  box-shadow: 0 0 22px #6e4fff;
+  transform: translate(-50%, -50%);
+}
+.transition-loader[data-variant="6"] .transition-bit { top: 50%; left: 50%; width: 9vmin; height: 9vmin; border: 2px solid rgba(52,36,97,0.72); border-radius: 50%; transform: translate(-50%, -50%); animation: transition-echo 900ms ease-out infinite; }
+
+/* Swarm: scattered agents converge and immediately escape. */
+.transition-loader[data-variant="7"] { background: #172d20; backdrop-filter: none; }
+.transition-loader[data-variant="7"] .transition-art::before { position: absolute; inset: 0; content: ""; background: radial-gradient(circle at center, rgba(166,255,125,0.2), transparent 34%); animation: transition-swarm-field 760ms ease-in-out infinite alternate; }
+.transition-loader[data-variant="7"] .transition-bit { width: 9px; height: 9px; border-radius: 50%; background: #ddffd1; box-shadow: 0 0 12px #a6ff7d; animation: transition-swarm 820ms cubic-bezier(0.65, 0, 0.35, 1) infinite alternate; }
+
+/* Relic: oxidized shards assemble into a temporary artifact. */
+.transition-loader[data-variant="8"] { background: #49301e; backdrop-filter: none; }
+.transition-loader[data-variant="8"] .transition-art::before { position: absolute; top: 50%; left: 50%; width: 22vmin; height: 22vmin; border: 1px solid #f1dfba; content: ""; transform: translate(-50%, -50%) rotate(45deg); animation: transition-relic-core 900ms cubic-bezier(0.76,0,0.24,1) both; }
+.transition-loader[data-variant="8"] .transition-bit { width: 7vmin; height: 18vmin; background: linear-gradient(120deg, #ffe0a4, #a56a2c 46%, #442611); clip-path: polygon(50% 0, 100% 64%, 72% 100%, 0 78%); transform: translate(-50%, -50%) rotate(var(--r)); animation: transition-relic-shard 760ms cubic-bezier(0.76,0,0.24,1) infinite alternate; }
+
+/* Recall: multiple afterimages disagree, then collapse into one trace. */
+.transition-loader[data-variant="9"] { background: #201d32; backdrop-filter: none; }
+.transition-loader[data-variant="9"] .transition-art::before,
+.transition-loader[data-variant="9"] .transition-art::after { position: absolute; inset: 12%; border: 2px solid #8da4ff; border-radius: 46% 54% 58% 42%; content: ""; animation: transition-recall-a 760ms steps(5, end) infinite; }
+.transition-loader[data-variant="9"] .transition-art::after { border-color: #ff7fa9; animation-name: transition-recall-b; }
+.transition-loader[data-variant="9"] .transition-bit { width: 16vw; height: 2px; background: linear-gradient(90deg, transparent, #f3f5ff, transparent); transform: rotate(var(--r)); animation: transition-recall-line 620ms steps(4,end) infinite; }
 
 @keyframes loader-orbit-a { to { transform: rotate(360deg) scale(0.86); } }
 @keyframes loader-orbit-b { to { transform: rotate(-360deg) scale(1.12); } }
@@ -597,6 +750,27 @@ button {
 @keyframes loader-final-a { to { transform: rotate(360deg) translateX(8px) scale(0.76); } }
 @keyframes loader-final-b { to { transform: rotate(-360deg) translateX(-8px) scale(1.26); } }
 @keyframes loader-word-final { 25% { transform: translate(-14px, 4px) skewX(28deg); } 50% { transform: translate(16px, -3px) skewX(-34deg); opacity: 0.25; } 75% { transform: translate(-7px, -5px) scaleX(1.5); } }
+@keyframes transition-machine-grid { from { opacity: 0; transform: scale(1.35) rotate(7deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes transition-machine-scan { from { transform: translateX(0); } to { transform: translateX(790%); } }
+@keyframes transition-machine-code { from { opacity: 0.18; transform: translateX(-28px) scaleX(0.28); } to { opacity: 1; transform: translateX(28px) scaleX(1); } }
+@keyframes transition-nature-grow { from { opacity: 0; transform: scaleX(var(--mirror)) scaleY(0.02) rotate(-18deg); } to { opacity: 1; transform: scaleX(var(--mirror)) scaleY(1) rotate(0); } }
+@keyframes transition-nature-leaf { from { opacity: 0.2; transform: translate(-18px, 22px) rotate(-30deg) scale(0.4); } to { opacity: 1; transform: translate(12px, -22px) rotate(35deg) scale(1.15); } }
+@keyframes transition-rain { to { background-position: 40px 120px; } }
+@keyframes transition-rain-bit { from { opacity: 0; transform: translateY(-65vh) rotate(14deg); } 20% { opacity: 0.8; } to { opacity: 0; transform: translateY(65vh) rotate(14deg); } }
+@keyframes transition-ripple { from { opacity: 0.85; transform: translateX(-50%) scale(0.08); } to { opacity: 0; transform: translateX(-50%) scale(1.8); } }
+@keyframes transition-mirror-left { from { transform: rotateY(92deg) translateX(-20%); opacity: 0; } 50% { transform: rotateY(0); opacity: 1; } to { transform: rotateY(-18deg) translateX(-5%); opacity: 0.55; } }
+@keyframes transition-mirror-right { from { transform: rotateY(-92deg) translateX(20%); opacity: 0; } 50% { transform: rotateY(0); opacity: 1; } to { transform: rotateY(18deg) translateX(5%); opacity: 0.55; } }
+@keyframes transition-mirror-glint { from { opacity: 0.12; transform: translateY(-15%) rotate(18deg); } to { opacity: 0.9; transform: translateY(15%) rotate(-18deg); } }
+@keyframes transition-shadow { from { opacity: 0; transform: translate(-50%, -50%) scale(0.02) rotate(0); } 55% { opacity: 1; transform: translate(-50%, -50%) scale(4.8) rotate(90deg); } to { opacity: 0.7; transform: translate(-50%, -50%) scale(0.72) rotate(180deg); } }
+@keyframes transition-shadow-ray { from { opacity: 0.06; height: 8vh; } to { opacity: 0.6; height: 62vh; } }
+@keyframes transition-echo { from { opacity: 0.9; transform: translate(-50%, -50%) scale(0.04); } to { opacity: 0; transform: translate(-50%, -50%) scale(9); } }
+@keyframes transition-swarm-field { from { transform: scale(0.55); opacity: 0.4; } to { transform: scale(1.35); opacity: 1; } }
+@keyframes transition-swarm { from { opacity: 0.25; transform: translate(0, 0) scale(0.45); } 55% { opacity: 1; transform: translate(calc(50vw - var(--x)), calc(50vh - var(--y))) scale(1.5); } to { opacity: 0; transform: translate(0, 0) scale(1.8); } }
+@keyframes transition-relic-core { from { opacity: 0; transform: translate(-50%, -50%) rotate(0) scale(0.05); } 60% { opacity: 1; transform: translate(-50%, -50%) rotate(225deg) scale(1.2); } to { opacity: 0.6; transform: translate(-50%, -50%) rotate(405deg) scale(0.75); } }
+@keyframes transition-relic-shard { from { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r)) scale(0.15); } to { opacity: 1; transform: translate(calc(50vw - var(--x)), calc(50vh - var(--y))) rotate(calc(var(--r) + 120deg)) scale(0.82); } }
+@keyframes transition-recall-a { 0%, 100% { transform: translate(-26px, 14px) scale(0.86); opacity: 0.25; } 50% { transform: translate(18px, -10px) scale(1.08); opacity: 0.9; } }
+@keyframes transition-recall-b { 0%, 100% { transform: translate(22px, -18px) scale(1.1); opacity: 0.75; } 50% { transform: translate(-14px, 12px) scale(0.82); opacity: 0.24; } }
+@keyframes transition-recall-line { 0% { opacity: 0; transform: translateX(-18vw) rotate(var(--r)); } 50% { opacity: 1; } 100% { opacity: 0; transform: translateX(18vw) rotate(var(--r)); } }
 @keyframes type-caret { 0%, 48% { opacity: 1; } 49%, 100% { opacity: 0; } }
 @keyframes timer-expired { 50% { opacity: 0.16; } }
 

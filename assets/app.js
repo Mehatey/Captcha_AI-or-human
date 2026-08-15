@@ -32212,18 +32212,26 @@ void main() {
       if (!basePositions) return;
       const mode = geometry.userData.mode ?? stageIndex;
       const phase = sheetIndex * 2.83 + mode * 0.67;
-      const amplitude = 0.015 + mode * 7e-4;
+      const amplitude = 0.029 + mode * 11e-4;
+      const breath = Math.sin(elapsed * 0.42 + phase);
+      const baseRotation = (sheetIndex ? 1 : -1) * 6e-3;
+      sheet.position.z = -0.58 + breath * 0.016;
+      sheet.rotation.z = baseRotation + Math.sin(elapsed * 0.31 + phase * 1.4) * 28e-4;
+      paperMaterials[sheetIndex].roughness = 0.88 + breath * 0.035;
+      paperMaterials[sheetIndex].clearcoat = 0.05 + (breath + 1) * 0.018;
+      paperEdges[sheetIndex].material.opacity = 0.38 + Math.sin(elapsed * 0.5 + phase) * 0.09;
+      paperGridMaterials[sheetIndex].opacity = 0.21 + Math.sin(elapsed * 0.36 + phase * 1.2) * 0.045;
       for (let vertex2 = 0; vertex2 < position.count; vertex2 += 1) {
         const offset = vertex2 * 3;
         const baseX = basePositions[offset];
         const baseY = basePositions[offset + 1];
         const baseZ = basePositions[offset + 2];
-        const horizontalEdge = clamp2((Math.abs(baseX) / halfWidth - 0.72) / 0.28);
-        const verticalEdge = clamp2((Math.abs(baseY) / halfHeight - 0.72) / 0.28);
+        const horizontalEdge = clamp2((Math.abs(baseX) / halfWidth - 0.58) / 0.42);
+        const verticalEdge = clamp2((Math.abs(baseY) / halfHeight - 0.58) / 0.42);
         const edgeInfluence = smooth(Math.max(horizontalEdge, verticalEdge));
-        const driftX = (Math.sin(baseY * 1.52 + elapsed * 0.33 + phase) + Math.sin(baseY * 4.1 - elapsed * 0.16 + phase * 1.7) * 0.28) * amplitude * edgeInfluence;
-        const driftY = (Math.sin(baseX * 1.37 + elapsed * 0.27 + phase * 1.31) + Math.cos(baseX * 3.8 - elapsed * 0.13 + phase) * 0.24) * amplitude * 0.78 * edgeInfluence;
-        const curl = Math.sin(elapsed * 0.29 + baseX * 1.8 + baseY * 0.76 + phase) * 8e-3 * (0.18 + edgeInfluence * 0.82);
+        const driftX = (Math.sin(baseY * 1.52 + elapsed * 0.43 + phase) + Math.sin(baseY * 4.1 - elapsed * 0.21 + phase * 1.7) * 0.34) * amplitude * edgeInfluence;
+        const driftY = (Math.sin(baseX * 1.37 + elapsed * 0.37 + phase * 1.31) + Math.cos(baseX * 3.8 - elapsed * 0.18 + phase) * 0.3) * amplitude * 0.82 * edgeInfluence;
+        const curl = Math.sin(elapsed * 0.36 + baseX * 1.8 + baseY * 0.76 + phase) * 0.015 * (0.14 + edgeInfluence * 0.86);
         position.setXYZ(vertex2, baseX + driftX, baseY + driftY, baseZ + curl);
       }
       position.needsUpdate = true;
