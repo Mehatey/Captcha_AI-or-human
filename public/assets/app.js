@@ -34881,6 +34881,7 @@ void main() {
   var opener = document.querySelector("#opener");
   var openerCanvas = document.querySelector("#opener-canvas");
   var openerVideo = document.querySelector("#opener-video");
+  var openerVideoBackground = document.querySelector("#opener-video-bg");
   var openerAudio = document.querySelector("#opener-audio");
   var openerEnter = document.querySelector("#opener-enter");
   var openerCopy = document.querySelector("#opener-copy");
@@ -35201,6 +35202,7 @@ void main() {
     if (openerFinished) return;
     openerFinished = true;
     openerVideo.pause();
+    openerVideoBackground.pause();
     openerAudio.pause();
     opener.classList.add("is-exiting");
     document.body.classList.add("opener-complete");
@@ -35292,6 +35294,7 @@ void main() {
     openerCrackSoundStep = 0;
     opener.classList.add("is-running");
     openerVideo.currentTime = 0;
+    openerVideoBackground.currentTime = 0;
     openerAudio.currentTime = 0;
     openerAudio.volume = 0.24;
     audioContext ?? (audioContext = new (window.AudioContext || window.webkitAudioContext)());
@@ -35299,6 +35302,7 @@ void main() {
     });
     if (!reducedMotion) {
       openerVideo.playbackRate = 1;
+      openerVideoBackground.playbackRate = 1;
       openerAudio.playbackRate = 0.6;
     }
     openerAudio.play().catch(() => {
@@ -35306,11 +35310,15 @@ void main() {
     if (reducedMotion) {
       openerVideo.play().catch(() => {
       });
+      openerVideoBackground.play().catch(() => {
+      });
       return;
     }
     window.setTimeout(() => {
       if (openerFinished) return;
       openerVideo.play().catch(() => {
+      });
+      openerVideoBackground.play().catch(() => {
       });
     }, OPENER_VIDEO_START * 1e3);
   }
