@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import './styles.css';
 
 const experience = document.querySelector('#experience');
@@ -21,6 +22,273 @@ const comparisonLabels = [...document.querySelectorAll('.comparison span')];
 const cursorLabel = document.querySelector('.cursor-label');
 const chapterButtons = [...document.querySelectorAll('.chapter')];
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const opener = document.querySelector('#opener');
+const openerCanvas = document.querySelector('#opener-canvas');
+const openerVideo = document.querySelector('#opener-video');
+const openerAudio = document.querySelector('#opener-audio');
+const openerEnter = document.querySelector('#opener-enter');
+const openerSkip = document.querySelector('#opener-skip');
+const openerSound = document.querySelector('#opener-sound');
+const openerCopy = document.querySelector('#opener-copy');
+const openerLoadValue = document.querySelector('#opener-load-value');
+const openerProgressFill = document.querySelector('#opener-progress-fill');
+const openerPortraitUrl = new URL('/opener/human-scans.webp', window.location.origin).href;
+[...document.querySelectorAll('.opener-portraits i')].forEach((portrait) => {
+  portrait.style.backgroundImage = `url("${openerPortraitUrl}")`;
+});
+
+const OPENER_DURATION = reducedMotion ? 2.4 : 8.65;
+const OPENER_LINES = reducedMotion
+  ? [[0, 'HUMAN OR MACHINE?'], [1.05, 'PROVE YOUR PRESENCE']]
+  : [
+    [0, 'HUMAN OR MACHINE?'],
+    [1.45, 'CAPTCHA ONCE KNEW THE DIFFERENCE.'],
+    [3.1, 'NOW BOTH CAN SEE. BOTH CAN DRAW.'],
+    [5.05, 'IDENTITY IS NOT PRESENCE.'],
+    [6.7, 'WHAT CAN A TEST STILL PROVE?'],
+    [7.95, 'PROVE YOUR PRESENCE.'],
+  ];
+
+let openerStartedAt = null;
+let openerFinished = false;
+let openerLineIndex = -1;
+let openerModel = null;
+let openerModelReady = false;
+let openerSoundEnabled = true;
+let openerLoadProgress = 0;
+
+const openerRenderer = new THREE.WebGLRenderer({ canvas: openerCanvas, alpha: false, antialias: true, powerPreference: 'high-performance' });
+openerRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+openerRenderer.outputColorSpace = THREE.SRGBColorSpace;
+openerRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+openerRenderer.toneMappingExposure = 1.2;
+openerRenderer.autoClear = false;
+
+const openerShaderScene = new THREE.Scene();
+const openerShaderCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const openerShaderMaterial = new THREE.ShaderMaterial({
+  depthTest: false,
+  depthWrite: false,
+  uniforms: {
+    uTime: { value: 0 },
+    uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+    uEnergy: { value: 0 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = vec4(position.xy, 0.0, 1.0);
+    }
+  `,
+  fragmentShader: `
+    precision highp float;
+    varying vec2 vUv;
+    uniform float uTime;
+    uniform vec2 uResolution;
+    uniform float uEnergy;
+
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+    }
+
+    void main() {
+      vec2 uv = vUv;
+      vec2 p = uv - 0.5;
+      p.x *= uResolution.x / max(uResolution.y, 1.0);
+      float radius = length(p);
+      float vignette = smoothstep(0.92, 0.18, radius);
+      float centerField = exp(-radius * 2.35);
+      float fineX = 1.0 - smoothstep(0.0, 0.035, abs(fract(uv.x * 34.0 + sin(uTime * 0.08) * 0.1) - 0.5));
+      float fineY = 1.0 - smoothstep(0.0, 0.05, abs(fract(uv.y * 20.0 - uTime * 0.018) - 0.5));
+      vec2 cell = floor(vec2(uv.x * 82.0, uv.y * 32.0));
+      float code = step(0.935, hash(cell + floor(uTime * 4.0))) * step(0.46, fract(uv.x * 82.0));
+      float sweep = exp(-abs(fract(uv.y - uTime * 0.095) - 0.5) * 74.0);
+      float pulse = 0.5 + 0.5 * sin(radius * 29.0 - uTime * 2.15);
+      vec3 black = vec3(0.005, 0.009, 0.012);
+      vec3 graphite = vec3(0.09, 0.115, 0.125);
+      vec3 cyan = vec3(0.15, 0.93, 0.95);
+      vec3 color = mix(black, graphite, centerField * 0.82);
+      color += cyan * (fineX * 0.026 + fineY * 0.018) * vignette;
+      color += cyan * code * (0.05 + uEnergy * 0.16) * vignette;
+      color += cyan * sweep * (0.045 + uEnergy * 0.18);
+      color += cyan * pulse * centerField * uEnergy * 0.025;
+      color *= 0.42 + vignette * 0.72;
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `,
+});
+openerShaderScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), openerShaderMaterial));
+
+const openerLogoScene = new THREE.Scene();
+const openerLogoCamera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.05, 50);
+openerLogoCamera.position.set(0, 0, 7.5);
+openerLogoScene.add(new THREE.HemisphereLight(0x9effff, 0x050608, 2.1));
+const openerKey = new THREE.DirectionalLight(0xffffff, 5.2);
+openerKey.position.set(3, 5, 6);
+openerLogoScene.add(openerKey);
+const openerRim = new THREE.PointLight(0x31f7ff, 42, 18, 2);
+openerRim.position.set(-4, 0.5, 4);
+openerLogoScene.add(openerRim);
+
+function setOpenerProgress(value) {
+  openerLoadProgress = Math.max(openerLoadProgress, Math.min(1, value));
+  const percent = Math.round(openerLoadProgress * 100);
+  openerLoadValue.textContent = `${String(percent).padStart(2, '0')}%`;
+  openerProgressFill.style.transform = `scaleX(${openerLoadProgress})`;
+  if (openerLoadProgress >= 1) {
+    opener.classList.remove('is-loading');
+    opener.classList.add('is-ready');
+    openerEnter.disabled = false;
+    openerEnter.querySelector('span').textContent = 'ENTER WITH SOUND';
+  }
+}
+
+new GLTFLoader().load(
+  './opener/captcha-logo.glb',
+  (gltf) => {
+    const root = gltf.scene;
+    const box = new THREE.Box3().setFromObject(root);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    root.position.sub(center);
+    root.scale.setScalar(2.65 / Math.max(size.x, size.y, size.z, 0.001));
+    root.traverse((child) => {
+      if (!child.isMesh) return;
+      child.material.envMapIntensity = 1.7;
+      child.material.roughness = Math.min(child.material.roughness ?? 0.5, 0.42);
+    });
+    openerModel = new THREE.Group();
+    openerModel.add(root);
+    openerLogoScene.add(openerModel);
+    openerModelReady = true;
+    setOpenerProgress(0.7);
+  },
+  (event) => {
+    if (event.total) setOpenerProgress(0.08 + (event.loaded / event.total) * 0.58);
+  },
+  () => {
+    const fallback = new THREE.Group();
+    const material = new THREE.MeshPhysicalMaterial({ color: 0x54efff, metalness: 0.72, roughness: 0.22, emissive: 0x0b6268, emissiveIntensity: 0.7 });
+    fallback.add(new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.22, 16, 72, Math.PI * 1.48), material));
+    const second = fallback.children[0].clone();
+    second.rotation.z = Math.PI;
+    fallback.add(second);
+    openerModel = fallback;
+    openerLogoScene.add(openerModel);
+    openerModelReady = true;
+    setOpenerProgress(0.7);
+  },
+);
+
+const openerAssetReady = { video: false, audio: false, portraits: false };
+function markOpenerAsset(key) {
+  if (openerAssetReady[key]) return;
+  openerAssetReady[key] = true;
+  const readyCount = Object.values(openerAssetReady).filter(Boolean).length;
+  setOpenerProgress(0.7 + readyCount * 0.1);
+}
+openerVideo.addEventListener('canplaythrough', () => markOpenerAsset('video'), { once: true });
+openerAudio.addEventListener('canplaythrough', () => markOpenerAsset('audio'), { once: true });
+const portraitPreload = new Image();
+portraitPreload.onload = () => markOpenerAsset('portraits');
+portraitPreload.onerror = () => markOpenerAsset('portraits');
+portraitPreload.src = openerPortraitUrl;
+window.setTimeout(() => {
+  if (!openerAssetReady.video && openerVideo.readyState >= 3) markOpenerAsset('video');
+  if (!openerAssetReady.audio && openerAudio.readyState >= 3) markOpenerAsset('audio');
+}, 1800);
+window.setTimeout(() => {
+  if (openerModelReady) setOpenerProgress(1);
+}, 4500);
+
+function resizeOpener() {
+  openerRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  openerRenderer.setSize(window.innerWidth, window.innerHeight, false);
+  openerShaderMaterial.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+  openerLogoCamera.aspect = window.innerWidth / window.innerHeight;
+  openerLogoCamera.updateProjectionMatrix();
+}
+
+function finishOpener() {
+  if (openerFinished) return;
+  openerFinished = true;
+  openerVideo.pause();
+  openerAudio.pause();
+  opener.classList.add('is-exiting');
+  document.body.classList.add('opener-complete');
+  experience.setAttribute('aria-hidden', 'false');
+  window.setTimeout(() => {
+    opener.hidden = true;
+    openerRenderer.dispose();
+    openerShaderMaterial.dispose();
+  }, reducedMotion ? 120 : 1050);
+}
+
+function startOpener() {
+  if (openerStartedAt !== null || openerEnter.disabled) return;
+  openerStartedAt = performance.now();
+  opener.classList.add('is-running');
+  openerVideo.currentTime = 0;
+  openerAudio.currentTime = 0;
+  openerVideo.play().catch(() => {});
+  if (openerSoundEnabled) openerAudio.play().catch(() => {});
+}
+
+openerEnter.addEventListener('click', startOpener);
+openerSkip.addEventListener('click', finishOpener);
+openerSound.addEventListener('click', () => {
+  openerSoundEnabled = !openerSoundEnabled;
+  openerSound.setAttribute('aria-pressed', String(openerSoundEnabled));
+  openerSound.textContent = openerSoundEnabled ? 'SOUND ON' : 'SOUND OFF';
+  openerAudio.muted = !openerSoundEnabled;
+  if (openerSoundEnabled && openerStartedAt !== null && !openerFinished) openerAudio.play().catch(() => {});
+});
+
+function animateOpener(now) {
+  if (openerFinished) return;
+  const idle = now * 0.001;
+  const elapsed = openerStartedAt === null ? 0 : (now - openerStartedAt) / 1000;
+  const progress = Math.min(1, elapsed / OPENER_DURATION);
+  openerShaderMaterial.uniforms.uTime.value = idle;
+  openerShaderMaterial.uniforms.uEnergy.value = openerStartedAt === null ? 0.08 : Math.sin(progress * Math.PI) * 0.9 + 0.1;
+
+  if (openerModelReady && openerModel) {
+    const activeTime = openerStartedAt === null ? idle * 0.28 : elapsed;
+    const travel = openerStartedAt === null ? 0 : Math.sin(Math.min(1, elapsed / 6.8) * Math.PI);
+    openerModel.rotation.y = activeTime * (openerStartedAt === null ? 0.42 : 1.06);
+    openerModel.rotation.x = Math.sin(activeTime * 0.72) * 0.2;
+    openerModel.rotation.z = Math.cos(activeTime * 0.38) * 0.09;
+    openerModel.position.x = openerStartedAt === null ? 0 : Math.sin(elapsed * 0.94) * travel * 2.35;
+    openerModel.position.y = openerStartedAt === null ? Math.sin(idle) * 0.08 : Math.sin(elapsed * 1.32) * travel * 0.78;
+    const entrance = openerStartedAt === null ? 0.86 : 0.82 + Math.sin(progress * Math.PI) * 0.4;
+    openerModel.scale.setScalar(entrance);
+  }
+
+  if (openerStartedAt !== null) {
+    let nextLine = 0;
+    OPENER_LINES.forEach(([at], index) => { if (elapsed >= at) nextLine = index; });
+    if (nextLine !== openerLineIndex) {
+      openerLineIndex = nextLine;
+      openerCopy.textContent = OPENER_LINES[nextLine][1];
+      openerCopy.classList.remove('is-changing');
+      void openerCopy.offsetWidth;
+      openerCopy.classList.add('is-changing');
+    }
+    opener.style.setProperty('--opener-progress', progress);
+    if (elapsed >= OPENER_DURATION) finishOpener();
+  }
+
+  openerRenderer.clear();
+  openerRenderer.render(openerShaderScene, openerShaderCamera);
+  openerRenderer.clearDepth();
+  openerRenderer.render(openerLogoScene, openerLogoCamera);
+  requestAnimationFrame(animateOpener);
+}
+
+resizeOpener();
+requestAnimationFrame(animateOpener);
 
 const STAGES = [
   { key: 'human', name: 'HUMAN', prompt: 'DRAW A CIRCLE THAT FEELS TIRED' },
@@ -2255,6 +2523,7 @@ function animate() {
 }
 
 window.addEventListener('resize', () => {
+  if (!openerFinished) resizeOpener();
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
