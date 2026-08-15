@@ -34885,12 +34885,14 @@ void main() {
   var openerAudio = document.querySelector("#opener-audio");
   var openerEnter = document.querySelector("#opener-enter");
   var openerCopy = document.querySelector("#opener-copy");
+  var openerCaptchaCode = document.querySelector("#opener-captcha-code");
   var openerLoadValue = document.querySelector("#opener-load-value");
   var OPENER_DURATION = reducedMotion ? 2.4 : 15.35;
   var OPENER_VIDEO_START = 7.35;
   var HUMAN_QUESTION = "Are you a human?";
   var AI_QUESTION = "Are you an AI?";
   var QUESTION_PREFIX = "Are you ";
+  var CAPTCHA_CODES = ["x829W", "7mQ4K", "R3a8P", "n6V2Z", "C9y7F", "4Hk2X", "p8M5R", "A1u9N", "Q7e3B", "2Zx6L", "h5T8C", "W0r4J"];
   var openerStartedAt = null;
   var openerFinished = false;
   var openerTypedText = "";
@@ -34995,17 +34997,27 @@ void main() {
         float openerA = abs(sin(dot(openerP, vec3(1.31, 0.73, 0.47)) * 9.0 + sin(openerP.z * 5.7)));
         float openerB = abs(sin(dot(openerP, vec3(-0.58, 1.43, 0.82)) * 7.2 + sin(openerP.x * 4.1)));
         float openerC = abs(sin(dot(openerP, vec3(0.42, -0.66, 1.57)) * 11.0));
-        float openerDistance = min(openerA, min(openerB, openerC));
-        float openerCrack = 1.0 - smoothstep(0.018, 0.075, openerDistance);
-        float openerEdge = (1.0 - smoothstep(0.075, 0.14, openerDistance)) - openerCrack;
-        float openerRadius = length(openerP.xy) * 0.22 + abs(openerP.z) * 0.08;
-        float openerReveal = smoothstep(openerRadius, openerRadius + 0.2, uOpenerCrack);
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.006, 0.008, 0.012), openerCrack * openerReveal * 0.94);
-        diffuseColor.rgb += vec3(0.06, 0.42, 0.82) * openerEdge * openerReveal * 0.42;
-        diffuseColor.a *= 1.0 - openerCrack * openerReveal * 0.48;
+        float openerD = abs(sin(dot(openerP, vec3(-1.12, 0.39, 0.91)) * 13.4 + sin(openerP.y * 6.2)));
+        float openerStageA = smoothstep(0.025, 0.24, uOpenerCrack);
+        float openerStageB = smoothstep(0.29, 0.48, uOpenerCrack);
+        float openerStageC = smoothstep(0.53, 0.72, uOpenerCrack);
+        float openerStageD = smoothstep(0.76, 0.96, uOpenerCrack);
+        float openerDistance = min(
+          openerA / max(openerStageA, 0.001),
+          min(
+            openerB / max(openerStageB, 0.001),
+            min(openerC / max(openerStageC, 0.001), openerD / max(openerStageD, 0.001))
+          )
+        );
+        float openerWidth = mix(0.016, 0.038, uOpenerCrack);
+        float openerCrack = 1.0 - smoothstep(openerWidth, openerWidth + 0.032, openerDistance);
+        float openerEdge = (1.0 - smoothstep(openerWidth + 0.028, openerWidth + 0.09, openerDistance)) - openerCrack;
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.003, 0.005, 0.009), openerCrack * 0.98);
+        diffuseColor.rgb += vec3(0.05, 0.48, 0.94) * openerEdge * 0.62;
+        diffuseColor.a *= 1.0 - openerCrack * 0.6;
       `);
     };
-    material.customProgramCacheKey = () => "captcha-crack-v2";
+    material.customProgramCacheKey = () => "captcha-crack-v3";
     material.needsUpdate = true;
     openerSolidMaterials.add(material);
   }
@@ -35351,7 +35363,7 @@ void main() {
       const spinEnd = 5.25;
       const crack = openerStartedAt === null ? 0 : Math.min(
         1,
-        MathUtils.smoothstep(elapsed, 0.35, 1.75) * 0.2 + MathUtils.smoothstep(elapsed, 1.8, 3.5) * 0.28 + MathUtils.smoothstep(elapsed, 3.55, spinEnd) * 0.52
+        MathUtils.smoothstep(elapsed, 0.52, 1.48) * 0.28 + MathUtils.smoothstep(elapsed, 2.18, 3.18) * 0.34 + MathUtils.smoothstep(elapsed, 3.88, 5.02) * 0.38
       );
       const scatter = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 5, 5.72);
       const form = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 5.35, 7.55);
@@ -35380,7 +35392,7 @@ void main() {
       updateOpenerShards(scatter, form, resolve, activeTime);
     }
     if (openerStartedAt !== null) {
-      const crackSoundStep = elapsed >= 5 ? 3 : elapsed >= 3.32 ? 2 : elapsed >= 1.62 ? 1 : 0;
+      const crackSoundStep = elapsed >= 4.55 ? 3 : elapsed >= 2.82 ? 2 : elapsed >= 1.18 ? 1 : 0;
       if (crackSoundStep > openerCrackSoundStep) {
         openerCrackSoundStep = crackSoundStep;
         playOpenerCrackSound([0, 0.58, 0.8, 1][crackSoundStep], crackSoundStep === 3);
@@ -35392,6 +35404,14 @@ void main() {
         openerCopy.textContent = nextText;
         openerCopy.classList.toggle("is-visible", Boolean(nextText));
       }
+      const captchaCodeIndex = Math.max(0, Math.min(CAPTCHA_CODES.length - 1, Math.floor((elapsed - 7.05) / 0.62)));
+      const captchaCodeVisible = elapsed >= 7.05;
+      const nextCaptchaCode = captchaCodeVisible ? CAPTCHA_CODES[captchaCodeIndex] : "";
+      if (openerCaptchaCode.textContent !== nextCaptchaCode) {
+        openerCaptchaCode.textContent = nextCaptchaCode;
+        openerCaptchaCode.dataset.shift = String(captchaCodeIndex % 3);
+      }
+      openerCaptchaCode.classList.toggle("is-visible", captchaCodeVisible);
       if (elapsed >= OPENER_DURATION) finishOpener();
     }
     openerRenderer.render(openerLogoScene, openerLogoCamera);

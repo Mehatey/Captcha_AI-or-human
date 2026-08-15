@@ -228,7 +228,45 @@ body.opener-complete #experience {
       #2f89d8 65%,
       #50a4dc);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset;
-  justify-content: flex-start;
+  justify-content: space-between;
+}
+.opener-captcha-code {
+  position: relative;
+  min-width: 116px;
+  color: rgba(255, 255, 255, 0.92);
+  font-family:
+    "Comic Sans MS",
+    "Chalkboard SE",
+    cursive;
+  font-size: clamp(20px, 1.75vw, 29px);
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-align: right;
+  text-shadow: -2px 1px 0 rgba(0, 44, 125, 0.65), 2px -1px 0 rgba(145, 231, 255, 0.6);
+  opacity: 0;
+  transition: opacity 150ms ease, transform 160ms ease;
+}
+.opener-captcha-code::after {
+  position: absolute;
+  top: 53%;
+  right: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(214, 244, 255, 0.56);
+  content: "";
+  transform: rotate(-4deg) scaleX(1.08);
+}
+.opener-captcha-code.is-visible {
+  opacity: 1;
+}
+.opener-captcha-code[data-shift="0"] {
+  transform: skewX(-9deg) rotate(-1deg);
+}
+.opener-captcha-code[data-shift="1"] {
+  transform: skewX(7deg) rotate(1.2deg);
+}
+.opener-captcha-code[data-shift="2"] {
+  transform: skewX(-4deg) rotate(0.4deg) translateY(-2px);
 }
 .opener-frame-media {
   position: relative;
@@ -269,16 +307,27 @@ body.opener-complete #experience {
 .opener-video-bg {
   z-index: 0;
   object-fit: cover;
-  opacity: 0.72;
-  filter: blur(48px) brightness(0.76) saturate(0.3);
-  transform: scale(1.82);
+  opacity: 0.78;
+  filter: blur(42px) brightness(0.8) saturate(0.32);
+  transform: scale(1.12);
 }
 .opener-video {
   z-index: 1;
   object-fit: contain;
   opacity: 1;
-  clip-path: inset(0 19.7%);
   filter: brightness(1.01) saturate(0.94);
+  -webkit-mask-image:
+    radial-gradient(
+      ellipse 29% 58% at 50% 50%,
+      #000 68%,
+      rgba(0, 0, 0, 0.9) 82%,
+      transparent 100%);
+  mask-image:
+    radial-gradient(
+      ellipse 29% 58% at 50% 50%,
+      #000 68%,
+      rgba(0, 0, 0, 0.9) 82%,
+      transparent 100%);
   mix-blend-mode: normal;
   transform: scale(0.82);
 }
@@ -712,10 +761,10 @@ body.opener-complete #experience {
 }
 @keyframes opener-video-bg-breathe {
   0% {
-    transform: scale(1.82);
+    transform: scale(1.12);
   }
   100% {
-    transform: scale(1.9);
+    transform: scale(1.18);
   }
 }
 @keyframes opener-pointer-path {
@@ -889,6 +938,10 @@ body.opener-complete #experience {
   }
   .opener-frame-header {
     padding: 0 16px;
+  }
+  .opener-captcha-code {
+    min-width: 82px;
+    font-size: 17px;
   }
   .opener-captcha-graphics {
     width: 74vw;
