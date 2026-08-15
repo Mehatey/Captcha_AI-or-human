@@ -64,7 +64,7 @@ body.opener-complete #experience {
 .opener.is-exiting { opacity: 0; filter: brightness(1.8) blur(14px); transform: scale(1.05); pointer-events: none; }
 
 #opener-canvas,
-.opener-video {
+.opener-video-frame {
   position: absolute;
 }
 
@@ -77,28 +77,101 @@ body.opener-complete #experience {
   transition: opacity 900ms 180ms ease;
 }
 
-.opener.is-running #opener-canvas { animation: opener-logo-phase 8.9s cubic-bezier(0.76, 0, 0.24, 1) both; }
+.opener.is-running #opener-canvas { animation: opener-logo-phase 8.35s cubic-bezier(0.76, 0, 0.24, 1) both; }
 
-.opener-video {
+.opener-video-frame {
   z-index: 2;
   top: 50%;
   left: 50%;
-  width: min(60vw, 900px);
-  height: auto;
-  max-height: 72vh;
+  display: grid;
+  width: min(82vw, 1280px);
+  height: min(84vh, 820px);
+  grid-template-rows: 76px minmax(0, 1fr) 54px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 224, 232, 0.68);
+  background: #050607;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.68), 0 0 0 8px rgba(255, 255, 255, 0.025);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.94);
+}
+
+.opener.is-running .opener-video-frame {
+  animation: opener-frame 8.15s 6.85s cubic-bezier(0.45, 0, 0.25, 1) both;
+}
+
+.opener-frame-header,
+.opener-frame-footer {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.opener-frame-header {
+  padding: 0 28px;
+  color: #f7fbff;
+  background: linear-gradient(105deg, #1769c7, #2f89d8 65%, #50a4dc);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset;
+}
+
+.opener-frame-header > span {
+  font: 10px/1 "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0.12em;
+  opacity: 0.68;
+}
+
+.opener-frame-media {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.opener-frame-media::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  background-image: linear-gradient(rgba(225, 238, 244, 0.13) 1px, transparent 1px), linear-gradient(90deg, rgba(225, 238, 244, 0.13) 1px, transparent 1px);
+  background-size: 25% 33.333%;
+  content: "";
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.opener-video {
+  position: absolute;
+  z-index: 1;
+  inset: -2%;
+  width: 104%;
+  height: 104%;
   object-fit: contain;
   object-position: center;
-  opacity: 0;
-  filter: brightness(1.08) saturate(0.78) blur(0.45px);
+  opacity: 1;
+  filter: brightness(1.07) saturate(0.46) contrast(0.88) blur(0.65px);
   -webkit-mask-image: radial-gradient(ellipse 48% 64% at 50% 50%, #000 46%, rgba(0,0,0,0.96) 68%, transparent 100%);
   mask-image: radial-gradient(ellipse 48% 64% at 50% 50%, #000 46%, rgba(0,0,0,0.96) 68%, transparent 100%);
   mix-blend-mode: normal;
-  transform: translate(-50%, -50%);
+  transform: scale(1.01);
 }
 
-.opener.is-running #opener-video {
-  animation: opener-video 7.85s 7.85s cubic-bezier(0.45, 0, 0.25, 1) both;
+.opener.is-running .opener-video {
+  animation: opener-video-breathe 7.6s 7.35s ease-out both;
 }
+
+.opener-frame-footer {
+  padding: 0 22px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  color: rgba(230, 237, 241, 0.72);
+  background: #111416;
+  font: 9px/1 "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0.09em;
+}
+
+.opener-frame-check { display: flex; align-items: center; gap: 9px; }
+.opener-frame-check i { width: 13px; height: 13px; border: 1px solid rgba(230,237,241,0.62); background: rgba(255,255,255,0.03); }
+.opener-frame-footer b { padding: 9px 18px; color: white; background: #2f89d8; font-weight: 500; }
+.opener.is-running .opener-frame-check i { animation: opener-frame-check 900ms 9.2s ease both; }
 
 .opener-captcha-graphics {
   z-index: 2;
@@ -307,18 +380,13 @@ body.opener-complete #experience {
 .opener.is-running .opener-sound { display: block; }
 
 .opener-copy {
-  position: absolute;
-  z-index: 8;
-  top: 50%;
-  left: 50%;
-  min-width: 170px;
+  min-width: 220px;
   margin: 0;
   padding: 0;
   color: #fff;
   background: transparent;
-  transform: translate(-50%, -50%);
   font-family: "Comic Sans MS", "Chalkboard SE", cursive;
-  font-size: clamp(14px, 1.05vw, 18px);
+  font-size: clamp(17px, 1.35vw, 22px);
   font-weight: 400;
   letter-spacing: 0;
   text-align: center;
@@ -384,27 +452,18 @@ body.opener-complete #experience {
   transition: opacity 850ms 450ms ease, transform 1200ms cubic-bezier(0.76, 0, 0.24, 1), background-color 800ms cubic-bezier(0.76, 0, 0.24, 1), color 500ms ease;
 }
 
-@keyframes opener-video {
-  0%, 3% {
-    opacity: 0;
-    filter: brightness(1.08) saturate(0.68) blur(1.6px);
-    transform: translate(-50%, -50%) scale(0.94);
-  }
-  19% {
-    opacity: 1;
-    filter: brightness(1.08) saturate(0.78) blur(0.45px);
-    transform: translate(-50%, -50%) scale(0.97);
-  }
-  88% {
-    opacity: 1;
-    filter: brightness(1.08) saturate(0.78) blur(0.45px);
-    transform: translate(-50%, -50%) scale(1.035);
-  }
-  100% {
-    opacity: 0;
-    filter: brightness(1.04) saturate(0.72) blur(1.2px);
-    transform: translate(-50%, -50%) scale(1.045);
-  }
+@keyframes opener-frame {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.92); filter: blur(7px); }
+  12%, 92% { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.015); filter: blur(1px); }
+}
+@keyframes opener-video-breathe {
+  0% { transform: scale(1.01); }
+  100% { transform: scale(1.075); }
+}
+@keyframes opener-frame-check {
+  0% { background: transparent; box-shadow: none; }
+  100% { background: #2f89d8; box-shadow: 0 0 14px rgba(47,137,216,0.55); }
 }
 @keyframes opener-logo-phase {
   0% { opacity: 0; transform: scale(0.9); }
@@ -435,7 +494,9 @@ body.opener-complete #experience {
 }
 
 @media (max-width: 760px) {
-  .opener-video { width: min(88vw, 680px); max-height: 68vh; }
+  .opener-video-frame { width: 92vw; height: 72vh; grid-template-rows: 62px minmax(0, 1fr) 46px; }
+  .opener-frame-header { padding: 0 16px; }
+  .opener-frame-header > span { display: none; }
   .opener-captcha-graphics { width: 74vw; height: 74vw; }
   .opener-code { width: 26vw; font-size: 9px; line-height: 1.5; }
   .opener-code-left { left: 2vw; }

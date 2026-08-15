@@ -22,15 +22,19 @@
   <body class="has-opener">
     <section id="opener" class="opener is-loading" aria-label="CAPTCHA After Human introduction">
       <canvas id="opener-canvas" aria-hidden="true"></canvas>
-      <video id="opener-video" class="opener-video" src="./opener/human-hologram.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
-      <pre class="opener-code opener-code-left" aria-hidden="true"><code>const frame = new VideoFrame(human);
-const input = await preprocess(frame);
-const identity = await encoder.run({ input });</code></pre>
-      <pre class="opener-code opener-code-right" aria-hidden="true"><code>const imitation = await model.draw({
-  prompt, identity,
-  preserveHesitation: true
-});</code></pre>
-      <p id="opener-copy" class="opener-copy" aria-live="polite"></p>
+      <div class="opener-video-frame" aria-hidden="true">
+        <header class="opener-frame-header">
+          <p id="opener-copy" class="opener-copy" aria-live="polite"></p>
+          <span>CAPTCHA / 01</span>
+        </header>
+        <div class="opener-frame-media">
+          <video id="opener-video" class="opener-video" src="./opener/human-hologram.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+        </div>
+        <footer class="opener-frame-footer">
+          <span class="opener-frame-check"><i></i>IDENTITY UNRESOLVED</span>
+          <b>VERIFY</b>
+        </footer>
+      </div>
 
       <button id="opener-enter" class="opener-enter" type="button" disabled>
         <span>ENTER</span><small id="opener-load-value" aria-hidden="true"></small>

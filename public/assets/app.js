@@ -158,6 +158,7 @@
   var GreaterEqualCompare = 518;
   var AlwaysCompare = 519;
   var StaticDrawUsage = 35044;
+  var DynamicDrawUsage = 35048;
   var GLSL3 = "300 es";
   var WebGLCoordinateSystem = 2e3;
   var WebGPUCoordinateSystem = 2001;
@@ -14581,60 +14582,6 @@
       });
     }
   }
-  var VideoTexture = class extends Texture {
-    /**
-     * Constructs a new video texture.
-     *
-     * @param {HTMLVideoElement} video - The video element to use as a data source for the texture.
-     * @param {number} [mapping=Texture.DEFAULT_MAPPING] - The texture mapping.
-     * @param {number} [wrapS=ClampToEdgeWrapping] - The wrapS value.
-     * @param {number} [wrapT=ClampToEdgeWrapping] - The wrapT value.
-     * @param {number} [magFilter=LinearFilter] - The mag filter value.
-     * @param {number} [minFilter=LinearFilter] - The min filter value.
-     * @param {number} [format=RGBAFormat] - The texture format.
-     * @param {number} [type=UnsignedByteType] - The texture type.
-     * @param {number} [anisotropy=Texture.DEFAULT_ANISOTROPY] - The anisotropy value.
-     */
-    constructor(video, mapping, wrapS, wrapT, magFilter = LinearFilter, minFilter = LinearFilter, format, type, anisotropy) {
-      super(video, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
-      this.isVideoTexture = true;
-      this.generateMipmaps = false;
-      this._requestVideoFrameCallbackId = 0;
-      const scope = this;
-      function updateVideo() {
-        scope.needsUpdate = true;
-        scope._requestVideoFrameCallbackId = video.requestVideoFrameCallback(updateVideo);
-      }
-      if ("requestVideoFrameCallback" in video) {
-        this._requestVideoFrameCallbackId = video.requestVideoFrameCallback(updateVideo);
-      }
-    }
-    clone() {
-      return new this.constructor(this.image).copy(this);
-    }
-    /**
-     * This method is called automatically by the renderer and sets {@link Texture#needsUpdate}
-     * to `true` every time a new frame is available.
-     *
-     * Only relevant if `requestVideoFrameCallback` is not supported in the browser.
-     */
-    update() {
-      const video = this.image;
-      const hasVideoFrameCallback = "requestVideoFrameCallback" in video;
-      if (hasVideoFrameCallback === false && video.readyState >= video.HAVE_CURRENT_DATA) {
-        this.needsUpdate = true;
-      }
-    }
-    /**
-     * @override
-     */
-    dispose() {
-      if (this._requestVideoFrameCallbackId !== 0) {
-        this.source.data.cancelVideoFrameCallback(this._requestVideoFrameCallbackId);
-      }
-      super.dispose();
-    }
-  };
   var CanvasTexture = class extends Texture {
     /**
      * Constructs a new texture.
@@ -17275,6 +17222,60 @@
     }
     return data;
   }
+  var TetrahedronGeometry = class _TetrahedronGeometry extends PolyhedronGeometry {
+    /**
+     * Constructs a new tetrahedron geometry.
+     *
+     * @param {number} [radius=1] - Radius of the tetrahedron.
+     * @param {number} [detail=0] - Setting this to a value greater than `0` adds vertices making it no longer a tetrahedron.
+     */
+    constructor(radius = 1, detail = 0) {
+      const vertices = [
+        1,
+        1,
+        1,
+        -1,
+        -1,
+        1,
+        -1,
+        1,
+        -1,
+        1,
+        -1,
+        -1
+      ];
+      const indices = [
+        2,
+        1,
+        0,
+        0,
+        3,
+        2,
+        1,
+        3,
+        0,
+        2,
+        3,
+        1
+      ];
+      super(vertices, indices, radius, detail);
+      this.type = "TetrahedronGeometry";
+      this.parameters = {
+        radius,
+        detail
+      };
+    }
+    /**
+     * Factory method for creating an instance of this class from the given
+     * JSON object.
+     *
+     * @param {Object} data - A JSON object representing the serialized geometry.
+     * @return {TetrahedronGeometry} A new instance.
+     */
+    static fromJSON(data) {
+      return new _TetrahedronGeometry(data.radius, data.detail);
+    }
+  };
   var TorusGeometry = class _TorusGeometry extends BufferGeometry {
     /**
      * Constructs a new torus geometry.
@@ -34884,8 +34885,8 @@ void main() {
   var openerEnter = document.querySelector("#opener-enter");
   var openerCopy = document.querySelector("#opener-copy");
   var openerLoadValue = document.querySelector("#opener-load-value");
-  var OPENER_DURATION = reducedMotion ? 2.4 : 18.35;
-  var OPENER_VIDEO_START = 8;
+  var OPENER_DURATION = reducedMotion ? 2.4 : 15.35;
+  var OPENER_VIDEO_START = 7.35;
   var HUMAN_QUESTION = "Are you a human?";
   var AI_QUESTION = "Are you an AI?";
   var QUESTION_PREFIX = "Are you ";
@@ -34898,14 +34899,13 @@ void main() {
   var openerSolidMaterials = /* @__PURE__ */ new Set();
   var openerCrackUniform = { value: 0 };
   var openerFaceTargets = [];
+  var openerShardData = [];
   var openerModelReady = false;
   var openerLoadProgress = 0;
   var openerKeyBuffer = null;
-  var openerVideoTexture = new VideoTexture(openerVideo);
-  openerVideoTexture.colorSpace = SRGBColorSpace;
-  openerVideoTexture.minFilter = LinearFilter;
-  openerVideoTexture.magFilter = LinearFilter;
-  openerVideoTexture.generateMipmaps = false;
+  var openerCrackBuffer = null;
+  var openerCrackSoundStep = 0;
+  var openerShardDummy = new Object3D();
   var openerRenderer = new WebGLRenderer({ canvas: openerCanvas, alpha: true, antialias: true, powerPreference: "high-performance" });
   openerRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   openerRenderer.outputColorSpace = SRGBColorSpace;
@@ -34921,29 +34921,33 @@ void main() {
   openerPmrem.dispose();
   openerLogoScene.environment = openerEnvironment;
   openerLogoScene.add(new HemisphereLight(16777215, 1118997, 3.2));
-  var openerKey = new DirectionalLight(16777215, 7.8);
+  var openerKey = new DirectionalLight(16777215, 4.8);
   openerKey.position.set(3, 5, 6);
   openerLogoScene.add(openerKey);
   var openerRim = new PointLight(5089023, 54, 18, 2);
   openerRim.position.set(-4, 1, 4);
   openerLogoScene.add(openerRim);
-  var openerWarm = new PointLight(16766128, 24, 15, 2);
+  var openerWarm = new PointLight(16766128, 9, 15, 2);
   openerWarm.position.set(4, -2, 3);
   openerLogoScene.add(openerWarm);
+  var openerSpotTarget = new Object3D();
+  openerSpotTarget.position.set(0, -0.15, 0);
+  openerLogoScene.add(openerSpotTarget);
+  var openerSpot = new SpotLight(15267071, 185, 18, Math.PI * 0.17, 0.58, 1.25);
+  openerSpot.position.set(0, 5.4, 5.8);
+  openerSpot.target = openerSpotTarget;
+  openerLogoScene.add(openerSpot);
   function setOpenerFragmentTargets() {
     if (!openerFragments || !openerFaceTargets.length) return;
-    const targetAttribute = openerFragments.geometry.attributes.aTarget;
-    const videoUvAttribute = openerFragments.geometry.attributes.aVideoUv;
-    const seedAttribute = openerFragments.geometry.attributes.aSeed;
-    for (let index = 0; index < targetAttribute.count; index += 1) {
-      const seed = seedAttribute.getX(index);
+    for (let index = 0; index < openerShardData.length; index += 1) {
+      const shard = openerShardData[index];
+      const seed = shard.seed;
       const targetIndex = Math.floor((index * 97 + seed * 997) % openerFaceTargets.length);
       const target = openerFaceTargets[targetIndex];
-      targetAttribute.setXYZ(index, target.position.x, target.position.y, target.position.z);
-      videoUvAttribute.setXY(index, target.uv.x, target.uv.y);
+      shard.target.copy(target.position);
+      openerFragments.setColorAt(index, target.color);
     }
-    targetAttribute.needsUpdate = true;
-    videoUvAttribute.needsUpdate = true;
+    if (openerFragments.instanceColor) openerFragments.instanceColor.needsUpdate = true;
   }
   new ImageLoader().load("./opener/human-face-target.png", (image) => {
     const canvas = document.createElement("canvas");
@@ -34968,7 +34972,8 @@ void main() {
             (0.5 - y / canvas.height) * 2.95,
             (brightness / 255 - 0.5) * 0.24 + (hash % 100 / 100 - 0.5) * 0.08
           ),
-          uv: new Vector2(x / canvas.width, 1 - y / canvas.height)
+          uv: new Vector2(x / canvas.width, 1 - y / canvas.height),
+          color: new Color(red / 255, green / 255, blue / 255)
         });
       }
     }
@@ -35010,7 +35015,7 @@ void main() {
     root.traverse((child) => {
       if (!child.isMesh || !child.geometry?.attributes?.position) return;
       const attribute = child.geometry.attributes.position;
-      const stride = Math.max(1, Math.floor(attribute.count / 620));
+      const stride = Math.max(1, Math.floor(attribute.count / 720));
       const point = new Vector3();
       for (let vertex2 = 0; vertex2 < attribute.count; vertex2 += stride) {
         point.fromBufferAttribute(attribute, vertex2).applyMatrix4(child.matrixWorld);
@@ -35022,110 +35027,95 @@ void main() {
       meshIndex += 1;
     });
     if (!candidates.length) return;
-    const count = Math.min(2800, candidates.length);
-    const positions = new Float32Array(count * 3);
-    const targets = new Float32Array(count * 3);
-    const videoUvs = new Float32Array(count * 2);
-    const seeds = new Float32Array(count);
+    const count = Math.min(720, candidates.length);
     const sampleStride = candidates.length / count;
-    for (let index = 0; index < count; index += 1) {
-      const sample = candidates[Math.floor(index * sampleStride)];
-      positions[index * 3] = sample.position.x;
-      positions[index * 3 + 1] = sample.position.y;
-      positions[index * 3 + 2] = sample.position.z;
-      seeds[index] = sample.seed;
-      const angle = sample.seed * Math.PI * 2;
-      targets[index * 3] = Math.cos(angle) * (0.55 + sample.seed * 1.25);
-      targets[index * 3 + 1] = Math.sin(angle) * (0.8 + sample.seed * 0.7);
-      targets[index * 3 + 2] = (sample.seed - 0.5) * 0.18;
-      videoUvs[index * 2] = 0.5 + Math.cos(angle) * 0.2;
-      videoUvs[index * 2 + 1] = 0.5 + Math.sin(angle) * 0.2;
-    }
-    const geometry = new BufferGeometry();
-    geometry.setAttribute("position", new BufferAttribute(positions, 3));
-    geometry.setAttribute("aTarget", new BufferAttribute(targets, 3));
-    geometry.setAttribute("aVideoUv", new BufferAttribute(videoUvs, 2));
-    geometry.setAttribute("aSeed", new BufferAttribute(seeds, 1));
-    openerFragmentUniforms = {
-      uScatter: { value: 0 },
-      uForm: { value: 0 },
-      uResolve: { value: 0 },
-      uTime: { value: 0 },
-      uPixelRatio: { value: Math.min(window.devicePixelRatio, 1.5) },
-      uVideo: { value: openerVideoTexture }
-    };
-    const material = new ShaderMaterial({
-      uniforms: openerFragmentUniforms,
+    const shardGeometry = new TetrahedronGeometry(0.06, 0);
+    shardGeometry.scale(1.8, 0.72, 0.45);
+    const shardMaterial = new MeshPhysicalMaterial({
+      color: 16777215,
+      vertexColors: true,
+      metalness: 0.72,
+      roughness: 0.3,
+      clearcoat: 0.5,
+      clearcoatRoughness: 0.22,
       transparent: true,
+      opacity: 0,
       depthWrite: false,
-      blending: NormalBlending,
-      vertexShader: `
-      uniform float uScatter;
-      uniform float uForm;
-      uniform float uResolve;
-      uniform float uTime;
-      uniform float uPixelRatio;
-      attribute float aSeed;
-      attribute vec3 aTarget;
-      attribute vec2 aVideoUv;
-      varying float vAlpha;
-      varying float vSeed;
-      varying float vForm;
-      varying vec2 vVideoUv;
-      void main() {
-        float scatter = uScatter * uScatter * (3.0 - 2.0 * uScatter);
-        float form = uForm * uForm * (3.0 - 2.0 * uForm);
-        vec3 direction = normalize(position + vec3(0.001));
-        vec3 separated = position + direction * (0.18 + aSeed * 0.72) * scatter;
-        vec3 control = direction * (2.4 + aSeed * 3.8) + vec3(
-          (aSeed - 0.5) * 2.8,
-          sin(aSeed * 37.0) * 2.1,
-          cos(aSeed * 29.0) * 2.5
-        );
-        float inverseForm = 1.0 - form;
-        vec3 flight = inverseForm * inverseForm * separated
-          + 2.0 * inverseForm * form * control
-          + form * form * aTarget;
-        float turbulence = sin(form * 3.14159265) * (0.12 + aSeed * 0.18);
-        flight += vec3(
-          sin(aSeed * 53.0 + uTime * 1.6),
-          cos(aSeed * 31.0 - uTime * 1.25),
-          sin(aSeed * 43.0 + uTime)
-        ) * turbulence;
-        vec3 currentPosition = mix(position, flight, scatter);
-        vec4 viewPosition = modelViewMatrix * vec4(currentPosition, 1.0);
-        gl_Position = projectionMatrix * viewPosition;
-        gl_PointSize = (1.15 + aSeed * 2.15) * uPixelRatio * (1.0 + form * 0.22);
-        vAlpha = smoothstep(0.06, 0.38, uScatter) * (1.0 - uResolve);
-        vSeed = aSeed;
-        vForm = form;
-        vVideoUv = aVideoUv;
-      }
-    `,
-      fragmentShader: `
-      uniform sampler2D uVideo;
-      varying float vAlpha;
-      varying float vSeed;
-      varying float vForm;
-      varying vec2 vVideoUv;
-      void main() {
-        float distanceToCenter = length(gl_PointCoord - 0.5);
-        float particle = 1.0 - smoothstep(0.08, 0.5, distanceToCenter);
-        vec3 blue = vec3(0.08, 0.3, 0.62);
-        vec3 silver = vec3(0.55, 0.78, 0.86);
-        vec3 color = mix(blue, silver, smoothstep(0.18, 0.9, vSeed));
-        vec3 videoColor = texture2D(uVideo, vVideoUv).rgb;
-        videoColor = pow(videoColor, vec3(0.92)) * 1.06;
-        color = mix(color, videoColor, smoothstep(0.48, 0.94, vForm) * 0.92);
-        gl_FragColor = vec4(color, particle * vAlpha * (0.46 + vSeed * 0.44));
-      }
-    `
+      envMapIntensity: 2.2
     });
-    openerFragments = new Points(geometry, material);
+    openerFragments = new InstancedMesh(shardGeometry, shardMaterial, count);
+    openerFragments.instanceMatrix.setUsage(DynamicDrawUsage);
     openerFragments.frustumCulled = false;
     openerFragments.renderOrder = 12;
+    openerShardData = [];
+    for (let index = 0; index < count; index += 1) {
+      const sample = candidates[Math.floor(index * sampleStride)];
+      const angle = sample.seed * Math.PI * 2;
+      const direction = sample.position.clone().normalize();
+      const tangent = new Vector3(
+        Math.sin(sample.seed * 41.7),
+        Math.cos(sample.seed * 29.3),
+        Math.sin(sample.seed * 67.1)
+      ).normalize();
+      const exploded = sample.position.clone().addScaledVector(direction, 0.75 + sample.seed * 1.55).addScaledVector(tangent, 0.35 + sample.seed * 0.85);
+      const control = exploded.clone().addScaledVector(direction, 1.15 + sample.seed * 2.1).addScaledVector(tangent, 0.8 + sample.seed * 1.4);
+      const target = new Vector3(
+        Math.cos(angle) * (0.55 + sample.seed * 1.25),
+        Math.sin(angle) * (0.8 + sample.seed * 0.7),
+        (sample.seed - 0.5) * 0.18
+      );
+      const shard = {
+        source: sample.position.clone(),
+        exploded,
+        control,
+        target,
+        seed: sample.seed,
+        scale: 0.55 + sample.seed * 1.35
+      };
+      openerShardData.push(shard);
+      openerShardDummy.position.copy(shard.source);
+      openerShardDummy.rotation.set(angle, angle * 0.63, angle * 1.37);
+      openerShardDummy.scale.setScalar(1e-3);
+      openerShardDummy.updateMatrix();
+      openerFragments.setMatrixAt(index, openerShardDummy.matrix);
+      openerFragments.setColorAt(index, new Color().setHSL(0.57 + sample.seed * 0.06, 0.62, 0.42 + sample.seed * 0.28));
+    }
+    openerFragments.instanceMatrix.needsUpdate = true;
+    if (openerFragments.instanceColor) openerFragments.instanceColor.needsUpdate = true;
     openerModel.add(openerFragments);
     setOpenerFragmentTargets();
+  }
+  function updateOpenerShards(scatter, form, resolve, time) {
+    if (!openerFragments || !openerShardData.length) return;
+    const scatterEase = scatter * scatter * (3 - 2 * scatter);
+    const formEase = form * form * (3 - 2 * form);
+    const inverseForm = 1 - formEase;
+    const visibility = MathUtils.smoothstep(scatter, 0.02, 0.24) * (1 - resolve);
+    openerFragments.visible = visibility > 2e-3;
+    openerFragments.material.opacity = visibility;
+    for (let index = 0; index < openerShardData.length; index += 1) {
+      const shard = openerShardData[index];
+      const startX = MathUtils.lerp(shard.source.x, shard.exploded.x, scatterEase);
+      const startY = MathUtils.lerp(shard.source.y, shard.exploded.y, scatterEase);
+      const startZ = MathUtils.lerp(shard.source.z, shard.exploded.z, scatterEase);
+      openerShardDummy.position.set(
+        inverseForm * inverseForm * startX + 2 * inverseForm * formEase * shard.control.x + formEase * formEase * shard.target.x,
+        inverseForm * inverseForm * startY + 2 * inverseForm * formEase * shard.control.y + formEase * formEase * shard.target.y,
+        inverseForm * inverseForm * startZ + 2 * inverseForm * formEase * shard.control.z + formEase * formEase * shard.target.z
+      );
+      const spin = scatterEase * (5 + shard.seed * 15) * (1 - formEase);
+      openerShardDummy.rotation.set(
+        shard.seed * 5.1 + spin,
+        shard.seed * 8.3 + spin * 0.73,
+        shard.seed * 11.7 - spin * 0.48
+      );
+      const flutter = 1 + Math.sin(time * 9 + shard.seed * 51) * 0.12 * (1 - formEase);
+      const scale = shard.scale * visibility * flutter * (1 - resolve * 0.82);
+      openerShardDummy.scale.set(scale, scale * (0.58 + shard.seed * 0.55), scale * (0.42 + shard.seed * 0.35));
+      openerShardDummy.updateMatrix();
+      openerFragments.setMatrixAt(index, openerShardDummy.matrix);
+    }
+    openerFragments.instanceMatrix.needsUpdate = true;
   }
   function setOpenerProgress(value) {
     openerLoadProgress = Math.max(openerLoadProgress, Math.min(1, value));
@@ -35219,7 +35209,6 @@ void main() {
       opener.hidden = true;
       openerFragments?.geometry.dispose();
       openerFragments?.material.dispose();
-      openerVideoTexture.dispose();
       openerEnvironmentTarget.dispose();
       openerRenderer.dispose();
     }, reducedMotion ? 120 : 1050);
@@ -35258,9 +35247,49 @@ void main() {
     hammer.start(now);
     hammer.stop(now + 0.038);
   }
+  function playOpenerCrackSound(intensity = 0.5, blast = false) {
+    if (!audioContext || audioContext.state !== "running") return;
+    if (!openerCrackBuffer) {
+      const duration = 0.42;
+      openerCrackBuffer = audioContext.createBuffer(1, Math.floor(audioContext.sampleRate * duration), audioContext.sampleRate);
+      const samples = openerCrackBuffer.getChannelData(0);
+      for (let index = 0; index < samples.length; index += 1) {
+        const decay = Math.pow(1 - index / samples.length, 2.7);
+        samples[index] = (Math.random() * 2 - 1) * decay;
+      }
+    }
+    const now = audioContext.currentTime;
+    const hits = blast ? 4 : 1;
+    for (let hit = 0; hit < hits; hit += 1) {
+      const start = now + hit * 0.047;
+      const noise = audioContext.createBufferSource();
+      const filter = audioContext.createBiquadFilter();
+      const gain = audioContext.createGain();
+      noise.buffer = openerCrackBuffer;
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime((blast ? 920 : 1450) + hit * 370, start);
+      filter.frequency.exponentialRampToValueAtTime(260 + hit * 70, start + 0.22);
+      filter.Q.value = 0.7 + hit * 0.18;
+      gain.gain.setValueAtTime(Math.max(1e-3, intensity * (blast ? 0.16 : 0.09) * (1 - hit * 0.14)), start);
+      gain.gain.exponentialRampToValueAtTime(1e-4, start + (blast ? 0.32 : 0.18));
+      noise.connect(filter).connect(gain).connect(audioContext.destination);
+      noise.start(start);
+    }
+    const thud = audioContext.createOscillator();
+    const thudGain = audioContext.createGain();
+    thud.type = "sine";
+    thud.frequency.setValueAtTime(blast ? 82 : 118, now);
+    thud.frequency.exponentialRampToValueAtTime(blast ? 31 : 62, now + 0.28);
+    thudGain.gain.setValueAtTime(intensity * (blast ? 0.13 : 0.035), now);
+    thudGain.gain.exponentialRampToValueAtTime(1e-4, now + 0.34);
+    thud.connect(thudGain).connect(audioContext.destination);
+    thud.start(now);
+    thud.stop(now + 0.36);
+  }
   function startOpener() {
     if (openerStartedAt !== null || openerEnter.disabled) return;
     openerStartedAt = performance.now();
+    openerCrackSoundStep = 0;
     opener.classList.add("is-running");
     openerVideo.currentTime = 0;
     openerAudio.currentTime = 0;
@@ -35269,7 +35298,7 @@ void main() {
     });
     if (!reducedMotion) {
       openerVideo.playbackRate = 1;
-      openerAudio.playbackRate = 0.5;
+      openerAudio.playbackRate = 0.6;
     }
     openerAudio.play().catch(() => {
     });
@@ -35287,19 +35316,19 @@ void main() {
   openerEnter.addEventListener("click", startOpener);
   function typewriterText(elapsed) {
     if (reducedMotion) return elapsed < 1.2 ? HUMAN_QUESTION : AI_QUESTION;
-    if (elapsed < 15.65) return "";
-    if (elapsed < 16.65) {
-      const length = Math.floor(MathUtils.mapLinear(elapsed, 15.65, 16.65, 0, HUMAN_QUESTION.length + 0.99));
+    if (elapsed < 7) return "";
+    if (elapsed < 7.9) {
+      const length = Math.floor(MathUtils.mapLinear(elapsed, 7, 7.9, 0, HUMAN_QUESTION.length + 0.99));
       return HUMAN_QUESTION.slice(0, length);
     }
-    if (elapsed < 16.95) return HUMAN_QUESTION;
-    if (elapsed < 17.3) {
-      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 16.95, 17.3, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
+    if (elapsed < 8.25) return HUMAN_QUESTION;
+    if (elapsed < 8.55) {
+      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 8.25, 8.55, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
       return HUMAN_QUESTION.slice(0, HUMAN_QUESTION.length - erase);
     }
-    if (elapsed < 17.75) {
+    if (elapsed < 8.95) {
       const suffix = AI_QUESTION.slice(QUESTION_PREFIX.length);
-      const length = Math.floor(MathUtils.mapLinear(elapsed, 17.3, 17.75, 0, suffix.length + 0.99));
+      const length = Math.floor(MathUtils.mapLinear(elapsed, 8.55, 8.95, 0, suffix.length + 0.99));
       return QUESTION_PREFIX + suffix.slice(0, length);
     }
     return AI_QUESTION;
@@ -35315,9 +35344,9 @@ void main() {
         1,
         MathUtils.smoothstep(elapsed, 0.35, 1.75) * 0.2 + MathUtils.smoothstep(elapsed, 1.8, 3.5) * 0.28 + MathUtils.smoothstep(elapsed, 3.55, spinEnd) * 0.52
       );
-      const scatter = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 5, 5.85);
-      const form = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 5.55, 8.25);
-      const resolve = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 7.95, 8.75);
+      const scatter = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 5, 5.72);
+      const form = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 5.35, 7.55);
+      const resolve = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 7.3, 8.08);
       const solidFade = MathUtils.smoothstep(scatter, 0.08, 0.9);
       const spin = openerStartedAt === null ? activeTime * 0.72 : Math.min(elapsed / spinEnd, 1) * Math.PI * 6;
       openerModel.rotation.y = spin;
@@ -35330,19 +35359,23 @@ void main() {
       openerModel.scale.setScalar(scale);
       openerKey.position.x = Math.sin(activeTime * 1.05) * 4.2;
       openerRim.position.x = -3.2 + Math.cos(activeTime * 0.72) * 1.2;
+      openerSpot.position.x = Math.sin(activeTime * 0.38) * 1.35;
+      openerSpot.position.z = 5.4 + Math.cos(activeTime * 0.31) * 0.55;
+      openerSpotTarget.position.x = Math.sin(activeTime * 0.44) * 0.28;
+      openerSpot.intensity = 175 + Math.sin(activeTime * 1.1) * 22;
       openerSolidMaterials.forEach((material) => {
         material.opacity = (material.userData.openerBaseOpacity ?? 1) * (1 - solidFade);
         material.depthWrite = scatter < 0.14;
       });
       openerCrackUniform.value = crack;
-      if (openerFragmentUniforms) {
-        openerFragmentUniforms.uScatter.value = scatter;
-        openerFragmentUniforms.uForm.value = form;
-        openerFragmentUniforms.uResolve.value = resolve;
-        openerFragmentUniforms.uTime.value = activeTime;
-      }
+      updateOpenerShards(scatter, form, resolve, activeTime);
     }
     if (openerStartedAt !== null) {
+      const crackSoundStep = elapsed >= 5 ? 3 : elapsed >= 3.32 ? 2 : elapsed >= 1.62 ? 1 : 0;
+      if (crackSoundStep > openerCrackSoundStep) {
+        openerCrackSoundStep = crackSoundStep;
+        playOpenerCrackSound(crackSoundStep / 3, crackSoundStep === 3);
+      }
       const nextText = typewriterText(elapsed);
       if (nextText !== openerTypedText) {
         playOpenerKeySound(nextText.length < openerTypedText.length);
