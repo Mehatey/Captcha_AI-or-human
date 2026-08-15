@@ -95,7 +95,7 @@ body.opener-complete #experience {
   transition: opacity 900ms 180ms ease;
 }
 .opener.is-running #opener-canvas {
-  animation: opener-logo-phase 16.1s cubic-bezier(0.76, 0, 0.24, 1) both;
+  animation: opener-logo-phase 8.9s cubic-bezier(0.76, 0, 0.24, 1) both;
 }
 .opener-video {
   z-index: 2;
@@ -124,7 +124,7 @@ body.opener-complete #experience {
   transform: translate(-50%, -50%);
 }
 .opener.is-running #opener-video {
-  animation: opener-video 8s 14.15s cubic-bezier(0.45, 0, 0.25, 1) both;
+  animation: opener-video 7.85s 7.85s cubic-bezier(0.45, 0, 0.25, 1) both;
 }
 .opener-captcha-graphics {
   z-index: 2;

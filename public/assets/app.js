@@ -34884,8 +34884,8 @@ void main() {
   var openerEnter = document.querySelector("#opener-enter");
   var openerCopy = document.querySelector("#opener-copy");
   var openerLoadValue = document.querySelector("#opener-load-value");
-  var OPENER_DURATION = reducedMotion ? 2.4 : 25.5;
-  var OPENER_VIDEO_START = 14.3;
+  var OPENER_DURATION = reducedMotion ? 2.4 : 18.35;
+  var OPENER_VIDEO_START = 8;
   var HUMAN_QUESTION = "Are you a human?";
   var AI_QUESTION = "Are you an AI?";
   var QUESTION_PREFIX = "Are you ";
@@ -35269,7 +35269,7 @@ void main() {
     });
     if (!reducedMotion) {
       openerVideo.playbackRate = 1;
-      openerAudio.playbackRate = 0.36;
+      openerAudio.playbackRate = 0.5;
     }
     openerAudio.play().catch(() => {
     });
@@ -35287,19 +35287,19 @@ void main() {
   openerEnter.addEventListener("click", startOpener);
   function typewriterText(elapsed) {
     if (reducedMotion) return elapsed < 1.2 ? HUMAN_QUESTION : AI_QUESTION;
-    if (elapsed < 22.1) return "";
-    if (elapsed < 23.2) {
-      const length = Math.floor(MathUtils.mapLinear(elapsed, 22.1, 23.2, 0, HUMAN_QUESTION.length + 0.99));
+    if (elapsed < 15.65) return "";
+    if (elapsed < 16.65) {
+      const length = Math.floor(MathUtils.mapLinear(elapsed, 15.65, 16.65, 0, HUMAN_QUESTION.length + 0.99));
       return HUMAN_QUESTION.slice(0, length);
     }
-    if (elapsed < 23.6) return HUMAN_QUESTION;
-    if (elapsed < 24.05) {
-      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 23.6, 24.05, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
+    if (elapsed < 16.95) return HUMAN_QUESTION;
+    if (elapsed < 17.3) {
+      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 16.95, 17.3, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
       return HUMAN_QUESTION.slice(0, HUMAN_QUESTION.length - erase);
     }
-    if (elapsed < 24.6) {
+    if (elapsed < 17.75) {
       const suffix = AI_QUESTION.slice(QUESTION_PREFIX.length);
-      const length = Math.floor(MathUtils.mapLinear(elapsed, 24.05, 24.6, 0, suffix.length + 0.99));
+      const length = Math.floor(MathUtils.mapLinear(elapsed, 17.3, 17.75, 0, suffix.length + 0.99));
       return QUESTION_PREFIX + suffix.slice(0, length);
     }
     return AI_QUESTION;
@@ -35310,11 +35310,14 @@ void main() {
     const elapsed = openerStartedAt === null ? 0 : (now - openerStartedAt) / 1e3;
     if (openerModelReady && openerModel) {
       const activeTime = openerStartedAt === null ? idle * 0.34 : elapsed;
-      const spinEnd = 7.4;
-      const crack = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 7.55, 9.25);
-      const scatter = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 9.25, 10.45);
-      const form = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 10.25, 14.7);
-      const resolve = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 14.4, 15.8);
+      const spinEnd = 5.25;
+      const crack = openerStartedAt === null ? 0 : Math.min(
+        1,
+        MathUtils.smoothstep(elapsed, 0.35, 1.75) * 0.2 + MathUtils.smoothstep(elapsed, 1.8, 3.5) * 0.28 + MathUtils.smoothstep(elapsed, 3.55, spinEnd) * 0.52
+      );
+      const scatter = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 5, 5.85);
+      const form = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 5.55, 8.25);
+      const resolve = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 7.95, 8.75);
       const solidFade = MathUtils.smoothstep(scatter, 0.08, 0.9);
       const spin = openerStartedAt === null ? activeTime * 0.72 : Math.min(elapsed / spinEnd, 1) * Math.PI * 6;
       openerModel.rotation.y = spin;
