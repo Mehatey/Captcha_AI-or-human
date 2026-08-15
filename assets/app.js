@@ -34831,8 +34831,8 @@ void main() {
   var openerEnter = document.querySelector("#opener-enter");
   var openerCopy = document.querySelector("#opener-copy");
   var openerLoadValue = document.querySelector("#opener-load-value");
-  var OPENER_DURATION = reducedMotion ? 2.4 : 15.6;
-  var OPENER_VIDEO_START = 4.15;
+  var OPENER_DURATION = reducedMotion ? 2.4 : 19.45;
+  var OPENER_VIDEO_START = 7.85;
   var HUMAN_QUESTION = "Are you a human?";
   var AI_QUESTION = "Are you an AI?";
   var QUESTION_PREFIX = "Are you ";
@@ -34843,6 +34843,8 @@ void main() {
   var openerFragments = null;
   var openerFragmentUniforms = null;
   var openerSolidMaterials = /* @__PURE__ */ new Set();
+  var openerCrackUniform = { value: 0 };
+  var openerFaceTargets = [];
   var openerModelReady = false;
   var openerLoadProgress = 0;
   var openerKeyBuffer = null;
@@ -34870,6 +34872,72 @@ void main() {
   var openerWarm = new PointLight(16766128, 24, 15, 2);
   openerWarm.position.set(4, -2, 3);
   openerLogoScene.add(openerWarm);
+  function setOpenerFragmentTargets() {
+    if (!openerFragments || !openerFaceTargets.length) return;
+    const targetAttribute = openerFragments.geometry.attributes.aTarget;
+    const seedAttribute = openerFragments.geometry.attributes.aSeed;
+    for (let index = 0; index < targetAttribute.count; index += 1) {
+      const seed = seedAttribute.getX(index);
+      const targetIndex = Math.floor((index * 97 + seed * 997) % openerFaceTargets.length);
+      const target = openerFaceTargets[targetIndex];
+      targetAttribute.setXYZ(index, target.x, target.y, target.z);
+    }
+    targetAttribute.needsUpdate = true;
+  }
+  new ImageLoader().load("./opener/human-face-target.png", (image) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth || image.width;
+    canvas.height = image.naturalHeight || image.height;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const points = [];
+    for (let y = 0; y < canvas.height; y += 3) {
+      for (let x = 0; x < canvas.width; x += 3) {
+        const offset = (y * canvas.width + x) * 4;
+        const red = pixels[offset];
+        const green = pixels[offset + 1];
+        const blue = pixels[offset + 2];
+        const brightness = Math.max(red, green, blue);
+        if (brightness < 34) continue;
+        const hash = (x * 73856093 ^ y * 19349663) >>> 0;
+        points.push(new Vector3(
+          (x / canvas.width - 0.5) * 5.25,
+          (0.5 - y / canvas.height) * 2.95,
+          (brightness / 255 - 0.5) * 0.24 + (hash % 100 / 100 - 0.5) * 0.08
+        ));
+      }
+    }
+    openerFaceTargets = points;
+    setOpenerFragmentTargets();
+  });
+  function configureOpenerCracks(material) {
+    material.transparent = true;
+    material.userData.openerBaseOpacity = material.opacity;
+    material.onBeforeCompile = (shader) => {
+      shader.uniforms.uOpenerCrack = openerCrackUniform;
+      shader.vertexShader = shader.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vOpenerCrackPosition;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvOpenerCrackPosition = position;");
+      shader.fragmentShader = shader.fragmentShader.replace("#include <common>", `#include <common>
+        uniform float uOpenerCrack;
+        varying vec3 vOpenerCrackPosition;
+      `).replace("#include <color_fragment>", `#include <color_fragment>
+        vec3 openerP = vOpenerCrackPosition;
+        float openerA = abs(sin(dot(openerP, vec3(1.31, 0.73, 0.47)) * 9.0 + sin(openerP.z * 5.7)));
+        float openerB = abs(sin(dot(openerP, vec3(-0.58, 1.43, 0.82)) * 7.2 + sin(openerP.x * 4.1)));
+        float openerC = abs(sin(dot(openerP, vec3(0.42, -0.66, 1.57)) * 11.0));
+        float openerDistance = min(openerA, min(openerB, openerC));
+        float openerCrack = 1.0 - smoothstep(0.018, 0.075, openerDistance);
+        float openerEdge = (1.0 - smoothstep(0.075, 0.14, openerDistance)) - openerCrack;
+        float openerRadius = length(openerP.xy) * 0.22 + abs(openerP.z) * 0.08;
+        float openerReveal = smoothstep(openerRadius, openerRadius + 0.2, uOpenerCrack);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.006, 0.008, 0.012), openerCrack * openerReveal * 0.94);
+        diffuseColor.rgb += vec3(0.06, 0.42, 0.82) * openerEdge * openerReveal * 0.42;
+      `);
+    };
+    material.customProgramCacheKey = () => "captcha-crack-v2";
+    material.needsUpdate = true;
+    openerSolidMaterials.add(material);
+  }
   function createOpenerFragments(root) {
     root.updateMatrixWorld(true);
     const candidates = [];
@@ -34891,6 +34959,7 @@ void main() {
     if (!candidates.length) return;
     const count = Math.min(2800, candidates.length);
     const positions = new Float32Array(count * 3);
+    const targets = new Float32Array(count * 3);
     const seeds = new Float32Array(count);
     const sampleStride = candidates.length / count;
     for (let index = 0; index < count; index += 1) {
@@ -34899,12 +34968,19 @@ void main() {
       positions[index * 3 + 1] = sample.position.y;
       positions[index * 3 + 2] = sample.position.z;
       seeds[index] = sample.seed;
+      const angle = sample.seed * Math.PI * 2;
+      targets[index * 3] = Math.cos(angle) * (0.55 + sample.seed * 1.25);
+      targets[index * 3 + 1] = Math.sin(angle) * (0.8 + sample.seed * 0.7);
+      targets[index * 3 + 2] = (sample.seed - 0.5) * 0.18;
     }
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new BufferAttribute(positions, 3));
+    geometry.setAttribute("aTarget", new BufferAttribute(targets, 3));
     geometry.setAttribute("aSeed", new BufferAttribute(seeds, 1));
     openerFragmentUniforms = {
-      uProgress: { value: 0 },
+      uScatter: { value: 0 },
+      uForm: { value: 0 },
+      uResolve: { value: 0 },
       uTime: { value: 0 },
       uPixelRatio: { value: Math.min(window.devicePixelRatio, 1.5) }
     };
@@ -34912,27 +34988,42 @@ void main() {
       uniforms: openerFragmentUniforms,
       transparent: true,
       depthWrite: false,
-      blending: AdditiveBlending,
+      blending: NormalBlending,
       vertexShader: `
-      uniform float uProgress;
+      uniform float uScatter;
+      uniform float uForm;
+      uniform float uResolve;
       uniform float uTime;
       uniform float uPixelRatio;
       attribute float aSeed;
+      attribute vec3 aTarget;
       varying float vAlpha;
       varying float vSeed;
       void main() {
-        float eased = uProgress * uProgress * (3.0 - 2.0 * uProgress);
+        float scatter = uScatter * uScatter * (3.0 - 2.0 * uScatter);
+        float form = uForm * uForm * (3.0 - 2.0 * uForm);
         vec3 direction = normalize(position + vec3(0.001));
-        vec3 drift = vec3(
-          sin(aSeed * 41.0 + uTime * 2.1) * 0.42,
-          (aSeed - 0.34) * 2.1,
-          cos(aSeed * 29.0 - uTime * 1.7) * 0.65
+        vec3 separated = position + direction * (0.18 + aSeed * 0.72) * scatter;
+        vec3 control = direction * (2.4 + aSeed * 3.8) + vec3(
+          (aSeed - 0.5) * 2.8,
+          sin(aSeed * 37.0) * 2.1,
+          cos(aSeed * 29.0) * 2.5
         );
-        vec3 broken = position + direction * (0.24 + aSeed * 1.65) * eased + drift * eased;
-        vec4 viewPosition = modelViewMatrix * vec4(broken, 1.0);
+        float inverseForm = 1.0 - form;
+        vec3 flight = inverseForm * inverseForm * separated
+          + 2.0 * inverseForm * form * control
+          + form * form * aTarget;
+        float turbulence = sin(form * 3.14159265) * (0.12 + aSeed * 0.18);
+        flight += vec3(
+          sin(aSeed * 53.0 + uTime * 1.6),
+          cos(aSeed * 31.0 - uTime * 1.25),
+          sin(aSeed * 43.0 + uTime)
+        ) * turbulence;
+        vec3 currentPosition = mix(position, flight, scatter);
+        vec4 viewPosition = modelViewMatrix * vec4(currentPosition, 1.0);
         gl_Position = projectionMatrix * viewPosition;
-        gl_PointSize = (2.0 + aSeed * 3.8) * uPixelRatio * (1.0 - eased * 0.34);
-        vAlpha = smoothstep(0.02, 0.18, uProgress) * (1.0 - smoothstep(0.72, 1.0, uProgress));
+        gl_PointSize = (1.15 + aSeed * 2.15) * uPixelRatio * (1.0 + form * 0.22);
+        vAlpha = smoothstep(0.06, 0.38, uScatter) * (1.0 - uResolve);
         vSeed = aSeed;
       }
     `,
@@ -34942,10 +35033,10 @@ void main() {
       void main() {
         float distanceToCenter = length(gl_PointCoord - 0.5);
         float particle = 1.0 - smoothstep(0.08, 0.5, distanceToCenter);
-        vec3 blue = vec3(0.12, 0.48, 1.0);
-        vec3 silver = vec3(0.82, 0.94, 1.0);
-        vec3 color = mix(blue, silver, smoothstep(0.2, 0.92, vSeed));
-        gl_FragColor = vec4(color, particle * vAlpha * (0.58 + vSeed * 0.42));
+        vec3 blue = vec3(0.08, 0.3, 0.62);
+        vec3 silver = vec3(0.55, 0.78, 0.86);
+        vec3 color = mix(blue, silver, smoothstep(0.18, 0.9, vSeed));
+        gl_FragColor = vec4(color, particle * vAlpha * (0.46 + vSeed * 0.44));
       }
     `
     });
@@ -34953,6 +35044,7 @@ void main() {
     openerFragments.frustumCulled = false;
     openerFragments.renderOrder = 12;
     openerModel.add(openerFragments);
+    setOpenerFragmentTargets();
   }
   function setOpenerProgress(value) {
     openerLoadProgress = Math.max(openerLoadProgress, Math.min(1, value));
@@ -34980,9 +35072,7 @@ void main() {
         materials.forEach((material) => {
           material.envMapIntensity = 2.4;
           material.roughness = Math.min(material.roughness ?? 0.5, 0.28);
-          material.transparent = true;
-          material.userData.openerBaseOpacity = material.opacity;
-          openerSolidMaterials.add(material);
+          configureOpenerCracks(material);
         });
       });
       openerModel = new Group();
@@ -35006,9 +35096,7 @@ void main() {
       openerLogoScene.add(openerModel);
       fallback.traverse((child) => {
         if (!child.isMesh) return;
-        child.material.transparent = true;
-        child.material.userData.openerBaseOpacity = child.material.opacity;
-        openerSolidMaterials.add(child.material);
+        configureOpenerCracks(child.material);
       });
       createOpenerFragments(fallback);
       openerModelReady = true;
@@ -35102,7 +35190,7 @@ void main() {
     if (!reducedMotion) {
       openerVideo.playbackRate = 1;
       openerGhostVideo.playbackRate = 1;
-      openerAudio.playbackRate = 0.72;
+      openerAudio.playbackRate = 0.55;
     }
     openerAudio.play().catch(() => {
     });
@@ -35122,19 +35210,19 @@ void main() {
   openerEnter.addEventListener("click", startOpener);
   function typewriterText(elapsed) {
     if (reducedMotion) return elapsed < 1.2 ? HUMAN_QUESTION : AI_QUESTION;
-    if (elapsed < 12.25) return "";
-    if (elapsed < 13.35) {
-      const length = Math.floor(MathUtils.mapLinear(elapsed, 12.25, 13.35, 0, HUMAN_QUESTION.length + 0.99));
+    if (elapsed < 16.05) return "";
+    if (elapsed < 17.15) {
+      const length = Math.floor(MathUtils.mapLinear(elapsed, 16.05, 17.15, 0, HUMAN_QUESTION.length + 0.99));
       return HUMAN_QUESTION.slice(0, length);
     }
-    if (elapsed < 13.75) return HUMAN_QUESTION;
-    if (elapsed < 14.2) {
-      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 13.75, 14.2, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
+    if (elapsed < 17.55) return HUMAN_QUESTION;
+    if (elapsed < 18) {
+      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 17.55, 18, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
       return HUMAN_QUESTION.slice(0, HUMAN_QUESTION.length - erase);
     }
-    if (elapsed < 14.75) {
+    if (elapsed < 18.55) {
       const suffix = AI_QUESTION.slice(QUESTION_PREFIX.length);
-      const length = Math.floor(MathUtils.mapLinear(elapsed, 14.2, 14.75, 0, suffix.length + 0.99));
+      const length = Math.floor(MathUtils.mapLinear(elapsed, 18, 18.55, 0, suffix.length + 0.99));
       return QUESTION_PREFIX + suffix.slice(0, length);
     }
     return AI_QUESTION;
@@ -35145,23 +35233,31 @@ void main() {
     const elapsed = openerStartedAt === null ? 0 : (now - openerStartedAt) / 1e3;
     if (openerModelReady && openerModel) {
       const activeTime = openerStartedAt === null ? idle * 0.34 : elapsed;
-      const fracture = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 2.55, 4.5);
-      const solidFade = MathUtils.smoothstep(fracture, 0.08, 0.88);
-      openerModel.rotation.y = activeTime * (openerStartedAt === null ? 0.72 : 2.76);
-      openerModel.rotation.x = Math.sin(activeTime * 0.78) * 0.1;
-      openerModel.rotation.z = Math.sin(activeTime * 0.42) * 0.035;
-      openerModel.position.x = Math.sin(activeTime * 0.7) * 0.06;
-      openerModel.position.y = Math.sin(activeTime * 0.84) * 0.08;
-      const scale = openerStartedAt === null ? 0.52 : 0.57 + Math.sin(Math.min(1, elapsed / 4.15) * Math.PI) * 0.025;
+      const crack = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 1.65, 3.35);
+      const scatter = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 3.05, 4.15);
+      const form = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 4.05, 7.95);
+      const resolve = openerStartedAt === null ? 0 : MathUtils.smoothstep(elapsed, 7.85, 8.95);
+      const solidFade = MathUtils.smoothstep(scatter, 0.08, 0.9);
+      const spin = activeTime * (openerStartedAt === null ? 0.72 : 1.55);
+      const lockedSpin = Math.PI * 2;
+      openerModel.rotation.y = MathUtils.lerp(spin, lockedSpin, form);
+      openerModel.rotation.x = Math.sin(activeTime * 0.78) * 0.1 * (1 - form);
+      openerModel.rotation.z = Math.sin(activeTime * 0.42) * 0.035 * (1 - form);
+      openerModel.position.x = Math.sin(activeTime * 0.7) * 0.06 * (1 - form);
+      openerModel.position.y = Math.sin(activeTime * 0.84) * 0.08 * (1 - form);
+      const scale = openerStartedAt === null ? 0.52 : 0.57 + Math.sin(Math.min(1, elapsed / 4.15) * Math.PI) * 0.025 + form * 0.12;
       openerModel.scale.setScalar(scale);
       openerKey.position.x = Math.sin(activeTime * 1.05) * 4.2;
       openerRim.position.x = -3.2 + Math.cos(activeTime * 0.72) * 1.2;
       openerSolidMaterials.forEach((material) => {
         material.opacity = (material.userData.openerBaseOpacity ?? 1) * (1 - solidFade);
-        material.depthWrite = fracture < 0.14;
+        material.depthWrite = scatter < 0.14;
       });
+      openerCrackUniform.value = crack;
       if (openerFragmentUniforms) {
-        openerFragmentUniforms.uProgress.value = fracture;
+        openerFragmentUniforms.uScatter.value = scatter;
+        openerFragmentUniforms.uForm.value = form;
+        openerFragmentUniforms.uResolve.value = resolve;
         openerFragmentUniforms.uTime.value = activeTime;
       }
     }

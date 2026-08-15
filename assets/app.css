@@ -95,7 +95,7 @@ body.opener-complete #experience {
   transition: opacity 900ms 180ms ease;
 }
 .opener.is-running #opener-canvas {
-  animation: opener-logo-phase 4.55s cubic-bezier(0.76, 0, 0.24, 1) both;
+  animation: opener-logo-phase 9.05s cubic-bezier(0.76, 0, 0.24, 1) both;
 }
 .opener-video {
   z-index: 2;
@@ -112,7 +112,7 @@ body.opener-complete #experience {
   transform: translate(-50%, -50%);
 }
 .opener.is-running #opener-video {
-  animation: opener-video 8.35s 3.95s cubic-bezier(0.45, 0, 0.25, 1) both;
+  animation: opener-video 8.35s 7.65s cubic-bezier(0.45, 0, 0.25, 1) both;
 }
 .opener-video-ghost {
   z-index: 3;
@@ -132,7 +132,7 @@ body.opener-complete #experience {
       transparent 98%);
 }
 .opener.is-running .opener-video-ghost {
-  animation: opener-ghost 7.65s 4.05s steps(1, end) both;
+  animation: opener-ghost 7.65s 7.8s steps(1, end) both;
 }
 .opener-captcha-graphics {
   z-index: 2;
@@ -242,10 +242,10 @@ body.opener-complete #experience {
   bottom: 31%;
 }
 .opener.is-running .opener-code-left {
-  animation: opener-code-phase 7.5s 4.3s steps(14, end) both;
+  animation: opener-code-phase 7.5s 8.25s steps(14, end) both;
 }
 .opener.is-running .opener-code-right {
-  animation: opener-code-phase 7.2s 4.55s steps(14, end) both;
+  animation: opener-code-phase 7.2s 8.5s steps(14, end) both;
 }
 .opener-captcha-ui {
   z-index: 2;
