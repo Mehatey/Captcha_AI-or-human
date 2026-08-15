@@ -34830,8 +34830,6 @@ void main() {
   var openerVideo = document.querySelector("#opener-video");
   var openerAudio = document.querySelector("#opener-audio");
   var openerEnter = document.querySelector("#opener-enter");
-  var openerSkip = document.querySelector("#opener-skip");
-  var openerSound = document.querySelector("#opener-sound");
   var openerCopy = document.querySelector("#opener-copy");
   var openerLoadValue = document.querySelector("#opener-load-value");
   var OPENER_DURATION = reducedMotion ? 2.4 : 10;
@@ -34843,9 +34841,7 @@ void main() {
   var openerTypedText = "";
   var openerModel = null;
   var openerModelReady = false;
-  var openerSoundEnabled = true;
   var openerLoadProgress = 0;
-  var openerModelBaseX = 0;
   var openerRenderer = new WebGLRenderer({ canvas: openerCanvas, alpha: true, antialias: true, powerPreference: "high-performance" });
   openerRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   openerRenderer.outputColorSpace = SRGBColorSpace;
@@ -34941,9 +34937,6 @@ void main() {
     openerRenderer.setSize(window.innerWidth, window.innerHeight, false);
     openerLogoCamera.aspect = window.innerWidth / window.innerHeight;
     openerLogoCamera.updateProjectionMatrix();
-    const viewHeight = 2 * Math.tan(MathUtils.degToRad(openerLogoCamera.fov * 0.5)) * openerLogoCamera.position.z;
-    const viewWidth = viewHeight * openerLogoCamera.aspect;
-    openerModelBaseX = window.innerWidth <= 760 ? 0 : -viewWidth * 0.25;
   }
   function finishOpener() {
     if (openerFinished) return;
@@ -34971,42 +34964,28 @@ void main() {
     }
     openerVideo.play().catch(() => {
     });
-    if (openerSoundEnabled) openerAudio.play().catch(() => {
+    openerAudio.play().catch(() => {
     });
   }
   openerEnter.addEventListener("click", startOpener);
-  openerSkip.addEventListener("click", finishOpener);
-  openerSound.addEventListener("click", () => {
-    openerSoundEnabled = !openerSoundEnabled;
-    openerSound.setAttribute("aria-pressed", String(openerSoundEnabled));
-    openerSound.textContent = openerSoundEnabled ? "SOUND ON" : "SOUND OFF";
-    openerAudio.muted = !openerSoundEnabled;
-    if (openerSoundEnabled && openerStartedAt !== null && !openerFinished) openerAudio.play().catch(() => {
-    });
-  });
   function typewriterText(elapsed) {
     if (reducedMotion) return elapsed < 1.2 ? HUMAN_QUESTION : AI_QUESTION;
-    if (elapsed < 0.45) return "";
-    if (elapsed < 2.25) {
-      const length = Math.floor(MathUtils.mapLinear(elapsed, 0.45, 2.25, 0, HUMAN_QUESTION.length + 0.99));
+    if (elapsed < 7.65) return "";
+    if (elapsed < 8.55) {
+      const length = Math.floor(MathUtils.mapLinear(elapsed, 7.65, 8.55, 0, HUMAN_QUESTION.length + 0.99));
       return HUMAN_QUESTION.slice(0, length);
     }
-    if (elapsed < 3.2) return HUMAN_QUESTION;
-    if (elapsed < 4.05) {
-      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 3.2, 4.05, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
+    if (elapsed < 8.75) return HUMAN_QUESTION;
+    if (elapsed < 9.1) {
+      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 8.75, 9.1, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
       return HUMAN_QUESTION.slice(0, HUMAN_QUESTION.length - erase);
     }
-    if (elapsed < 4.75) {
+    if (elapsed < 9.45) {
       const suffix = AI_QUESTION.slice(QUESTION_PREFIX.length);
-      const length = Math.floor(MathUtils.mapLinear(elapsed, 4.05, 4.75, 0, suffix.length + 0.99));
+      const length = Math.floor(MathUtils.mapLinear(elapsed, 9.1, 9.45, 0, suffix.length + 0.99));
       return QUESTION_PREFIX + suffix.slice(0, length);
     }
-    if (elapsed < 7.75) return AI_QUESTION;
-    if (elapsed < 8.85) {
-      const erase = Math.ceil(MathUtils.mapLinear(elapsed, 7.75, 8.85, 0, AI_QUESTION.length));
-      return AI_QUESTION.slice(0, AI_QUESTION.length - erase);
-    }
-    return "";
+    return AI_QUESTION;
   }
   function animateOpener(now) {
     if (openerFinished) return;
@@ -35018,18 +34997,19 @@ void main() {
       openerModel.rotation.y = activeTime * (openerStartedAt === null ? 0.72 : 2.02);
       openerModel.rotation.x = Math.sin(activeTime * 0.78) * 0.1;
       openerModel.rotation.z = Math.sin(activeTime * 0.42) * 0.035;
-      openerModel.position.x = openerModelBaseX + Math.sin(activeTime * 0.7) * 0.08;
+      openerModel.position.x = Math.sin(activeTime * 0.7) * 0.06;
       openerModel.position.y = Math.sin(activeTime * 0.84) * 0.08;
-      const scale = openerStartedAt === null ? 0.68 : 0.67 + Math.sin(progress * Math.PI) * 0.035;
+      const scale = openerStartedAt === null ? 0.48 : 0.47 + Math.sin(progress * Math.PI) * 0.025;
       openerModel.scale.setScalar(scale);
-      openerKey.position.x = openerModelBaseX + Math.sin(activeTime * 1.05) * 4.2;
-      openerRim.position.x = openerModelBaseX - 3.2 + Math.cos(activeTime * 0.72) * 1.2;
+      openerKey.position.x = Math.sin(activeTime * 1.05) * 4.2;
+      openerRim.position.x = -3.2 + Math.cos(activeTime * 0.72) * 1.2;
     }
     if (openerStartedAt !== null) {
       const nextText = typewriterText(elapsed);
       if (nextText !== openerTypedText) {
         openerTypedText = nextText;
         openerCopy.textContent = nextText;
+        openerCopy.classList.toggle("is-visible", Boolean(nextText));
       }
       opener.style.setProperty("--opener-progress", progress);
       if (elapsed >= OPENER_DURATION) finishOpener();

@@ -58,7 +58,7 @@ body.opener-complete #experience {
   inset: 0;
   overflow: hidden;
   color: #f4f5f5;
-  background: #050606;
+  background: #000;
   font-family:
     "Comic Sans MS",
     "Chalkboard SE",
@@ -72,7 +72,7 @@ body.opener-complete #experience {
     transform 900ms cubic-bezier(0.76, 0, 0.24, 1);
 }
 .opener.is-running {
-  background: #090b0c;
+  background: #000;
 }
 .opener[hidden] {
   display: none;
@@ -85,7 +85,8 @@ body.opener-complete #experience {
 }
 #opener-canvas,
 .opener-video,
-.opener-captcha-ui {
+.opener-captcha-ui,
+.opener-captcha-graphics {
   position: absolute;
   inset: 0;
 }
@@ -97,14 +98,14 @@ body.opener-complete #experience {
   transition: opacity 900ms 180ms ease;
 }
 .opener.is-running #opener-canvas {
-  opacity: 1;
+  animation: opener-logo-phase 3.2s cubic-bezier(0.76, 0, 0.24, 1) both;
 }
 .opener-video {
   z-index: 1;
-  left: 50%;
-  width: 50%;
+  left: 0;
+  width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   opacity: 0;
   filter: none;
@@ -112,7 +113,120 @@ body.opener-complete #experience {
   transform: none;
 }
 .opener.is-running .opener-video {
-  animation: opener-video 10s cubic-bezier(0.45, 0, 0.25, 1) both;
+  animation: opener-video 5s 2.4s cubic-bezier(0.45, 0, 0.25, 1) both;
+}
+.opener-captcha-graphics {
+  z-index: 2;
+  width: min(42vw, 500px);
+  height: min(42vw, 500px);
+  margin: auto;
+  opacity: 0;
+  pointer-events: none;
+}
+.opener.is-running .opener-captcha-graphics {
+  animation: opener-logo-phase 3.2s cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+.captcha-orbit,
+.captcha-node,
+.captcha-scan {
+  position: absolute;
+  display: block;
+}
+.captcha-orbit {
+  border-radius: 50%;
+  border-style: solid;
+}
+.captcha-orbit-a {
+  inset: 4%;
+  border-width: 1px;
+  border-color: rgba(123, 201, 230, 0.18) rgba(123, 201, 230, 0.76) rgba(123, 201, 230, 0.18) rgba(123, 201, 230, 0.76);
+  animation: captcha-orbit 4.8s linear infinite;
+}
+.captcha-orbit-b {
+  inset: 14%;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.62) transparent rgba(255, 255, 255, 0.18);
+  border-style: dashed;
+  animation: captcha-orbit 7s linear infinite reverse;
+}
+.captcha-orbit-c {
+  inset: 27%;
+  border-width: 2px;
+  border-color: rgba(54, 125, 238, 0.82) transparent rgba(54, 125, 238, 0.22);
+  animation: captcha-orbit 3.4s linear infinite;
+}
+.captcha-scan {
+  top: 18%;
+  left: 18%;
+  width: 64%;
+  height: 1px;
+  background: rgba(175, 230, 249, 0.82);
+  box-shadow: 0 0 14px rgba(105, 211, 255, 0.6);
+  animation: captcha-scan 2.1s ease-in-out infinite alternate;
+}
+.captcha-node {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #dff7ff;
+  box-shadow: 0 0 12px rgba(126, 220, 255, 0.88);
+}
+.captcha-node-a {
+  top: 3.5%;
+  left: calc(50% - 3px);
+}
+.captcha-node-b {
+  top: calc(50% - 3px);
+  right: 3.5%;
+}
+.captcha-node-c {
+  bottom: 3.5%;
+  left: calc(50% - 3px);
+}
+.captcha-node-d {
+  top: calc(50% - 3px);
+  left: 3.5%;
+}
+.opener-captcha-graphics::after {
+  position: absolute;
+  right: 8%;
+  bottom: 10%;
+  color: rgba(220, 248, 255, 0.9);
+  content: "\2713";
+  font: 18px/1 Arial, sans-serif;
+  opacity: 0;
+}
+.opener.is-running .opener-captcha-graphics::after {
+  animation: captcha-check 3.2s ease both;
+}
+.opener-code {
+  position: absolute;
+  z-index: 4;
+  width: min(17vw, 290px);
+  margin: 0;
+  overflow: hidden;
+  color: rgba(193, 224, 236, 0.78);
+  font:
+    10px/1.75 "SFMono-Regular",
+    Consolas,
+    monospace;
+  white-space: pre-wrap;
+  opacity: 0;
+  pointer-events: none;
+}
+.opener-code-left {
+  top: 23%;
+  left: 3vw;
+}
+.opener-code-right {
+  right: 3vw;
+  bottom: 24%;
+}
+.opener.is-running .opener-code-left {
+  animation: opener-code-phase 4s 2.8s steps(10, end) both;
+}
+.opener.is-running .opener-code-right {
+  animation: opener-code-phase 3.8s 3.2s steps(10, end) both;
 }
 .opener-captcha-ui {
   z-index: 2;
@@ -265,22 +379,27 @@ body.opener-complete #experience {
   z-index: 8;
   top: 50%;
   left: 50%;
-  min-width: 190px;
+  min-width: 170px;
   margin: 0;
-  padding: 8px 12px 9px;
+  padding: 0;
   color: #fff;
-  background: rgba(3, 4, 4, 0.8);
+  background: transparent;
   transform: translate(-50%, -50%);
   font-family:
     "Comic Sans MS",
     "Chalkboard SE",
     cursive;
-  font-size: clamp(15px, 1.2vw, 20px);
+  font-size: clamp(14px, 1.05vw, 18px);
   font-weight: 400;
   letter-spacing: 0;
   text-align: center;
   white-space: nowrap;
   text-shadow: none;
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+.opener-copy.is-visible {
+  opacity: 1;
 }
 .opener.is-running .opener-copy::after {
   display: inline-block;
@@ -296,9 +415,9 @@ body.opener-complete #experience {
   position: absolute;
   z-index: 8;
   left: 50%;
-  bottom: 5vh;
-  width: min(36vw, 520px);
-  height: 4px;
+  bottom: 4vh;
+  width: min(24vw, 280px);
+  height: 2px;
   overflow: hidden;
   padding: 1px;
   background: rgba(255, 255, 255, 0.24);
@@ -349,7 +468,7 @@ body.opener-complete #experience {
   border-color: #fff;
 }
 .opener-enter span {
-  font-size: 16px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 .opener-enter small {
@@ -368,11 +487,63 @@ body.opener-complete #experience {
     color 500ms ease;
 }
 @keyframes opener-video {
-  0%, 92% {
+  0%, 6% {
+    opacity: 0;
+  }
+  16%, 82% {
     opacity: 1;
   }
   100% {
     opacity: 0;
+  }
+}
+@keyframes opener-logo-phase {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  10%, 72% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+}
+@keyframes opener-code-phase {
+  0%, 10% {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+  24%, 76% {
+    opacity: 1;
+    clip-path: inset(0);
+  }
+  100% {
+    opacity: 0;
+    clip-path: inset(100% 0 0);
+  }
+}
+@keyframes captcha-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes captcha-scan {
+  to {
+    transform: translateY(320px);
+    opacity: 0.28;
+  }
+}
+@keyframes captcha-check {
+  0%, 68% {
+    opacity: 0;
+    transform: scale(0.45);
+  }
+  78%, 100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 @keyframes opener-caret {
@@ -414,8 +585,23 @@ body.opener-complete #experience {
 }
 @media (max-width: 760px) {
   .opener-video {
-    left: 50%;
-    width: 50%;
+    left: 0;
+    width: 100%;
+  }
+  .opener-captcha-graphics {
+    width: 74vw;
+    height: 74vw;
+  }
+  .opener-code {
+    width: 24vw;
+    font-size: 7px;
+    line-height: 1.55;
+  }
+  .opener-code-left {
+    left: 2vw;
+  }
+  .opener-code-right {
+    right: 2vw;
   }
   .opener-copy {
     min-width: 160px;
@@ -449,12 +635,17 @@ body.opener-complete #experience {
 }
 @media (prefers-reduced-motion: reduce) {
   .opener-video,
+  .opener-captcha-graphics,
+  .opener-captcha-graphics::after,
+  #opener-canvas,
+  .opener-code,
   .opener-checkbox i,
   .opener-grid span::after,
   .opener-sweep {
     animation: none !important;
   }
-  .opener.is-running .opener-video {
+  .opener.is-running #opener-canvas,
+  .opener.is-running .opener-captcha-graphics {
     opacity: 1;
   }
 }
