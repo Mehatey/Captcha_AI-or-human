@@ -22,19 +22,19 @@
   <body class="has-opener">
     <section id="opener" class="opener is-loading" aria-label="CAPTCHA After Human introduction">
       <canvas id="opener-canvas" aria-hidden="true"></canvas>
-      <div class="opener-portraits" aria-hidden="true">
-        <i></i><i></i><i></i><i></i><i></i><i></i>
-      </div>
       <video id="opener-video" class="opener-video" src="./opener/human-hologram.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
-      <div class="opener-scan" aria-hidden="true"></div>
-      <div class="opener-frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-
-      <p class="opener-index" aria-hidden="true">PROTOCOL 00 / PRESENCE</p>
-      <p id="opener-copy" class="opener-copy" aria-live="polite">LOADING HUMAN SIGNAL</p>
+      <div class="opener-captcha-ui" aria-hidden="true">
+        <div class="opener-checkbox"><i></i><span>I'M NOT A ROBOT</span><small>reCAPTCHA</small></div>
+        <div class="opener-grid">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <h1 class="opener-question">WHEN AI CAN SEE, DRAW, AND REMEMBER,<br />WHAT CAN A CAPTCHA STILL PROVE?</h1>
+      <p id="opener-copy" class="opener-copy" aria-live="polite"></p>
       <div class="opener-progress" aria-hidden="true"><i id="opener-progress-fill"></i></div>
 
       <button id="opener-enter" class="opener-enter" type="button" disabled>
-        <span>LOADING</span><small id="opener-load-value">00%</small>
+        <span>ENTER</span><small id="opener-load-value" aria-hidden="true"></small>
       </button>
       <button id="opener-skip" class="opener-skip" type="button">SKIP INTRO</button>
       <button id="opener-sound" class="opener-sound" type="button" aria-pressed="true">SOUND ON</button>
