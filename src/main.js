@@ -41,85 +41,68 @@ const TOOL_STYLES = [
   {
     name: 'graphite', snap: 0, audio: [1550, 0.78, 0.032],
     layers: [
-      { kind: 'line', color: 0x282321, opacity: 0.72, jitter: 0.002 },
-      { kind: 'points', color: 0x171718, opacity: 0.24, size: 0.045, jitter: 0.014 },
+      { kind: 'line', color: 0x282321, opacity: 0.78, jitter: 0.002 },
     ],
   },
   {
     name: 'plotter', snap: 0.115, audio: [3050, 2.4, 0.018],
     layers: [
       { kind: 'line', color: 0xffffff, opacity: 0.92 },
-      { kind: 'line', color: 0xd8ff45, opacity: 0.5, offset: 0.018 },
     ],
   },
   {
     name: 'moss-brush', snap: 0, audio: [720, 0.52, 0.042],
     layers: [
-      { kind: 'line', color: 0xc9ffd9, opacity: 0.68, jitter: 0.008 },
-      { kind: 'line', color: 0x55dc91, opacity: 0.36, offset: -0.028, jitter: 0.014 },
-      { kind: 'points', color: 0xa8f5a6, opacity: 0.58, size: 0.16, jitter: 0.035, every: 2 },
+      { kind: 'points', color: 0x55dc91, opacity: 0.76, size: 0.29, jitter: 0.006, nib: 'brush' },
     ],
   },
   {
     name: 'rain-nib', snap: 0, audio: [2350, 1.1, 0.026],
     layers: [
-      { kind: 'line', color: 0x281722, opacity: 0.84 },
-      { kind: 'line', color: 0x526dff, opacity: 0.38, offset: 0.022 },
-      { kind: 'line', color: 0xf0d8e2, opacity: 0.24, offset: -0.022 },
+      { kind: 'line', color: 0x281722, opacity: 0.86, jitter: 0.001 },
     ],
   },
   {
     name: 'glass-stylus', snap: 0.055, audio: [4100, 3.1, 0.014],
     layers: [
-      { kind: 'line', color: 0xf7f8ff, opacity: 0.88 },
-      { kind: 'line', color: 0x869cff, opacity: 0.48, offset: 0.028 },
+      { kind: 'points', color: 0xf7f8ff, opacity: 0.84, size: 0.24, nib: 'calligraphy' },
     ],
   },
   {
     name: 'charcoal', snap: 0, audio: [460, 0.44, 0.052],
     layers: [
-      { kind: 'line', color: 0x171718, opacity: 0.72, jitter: 0.018 },
-      { kind: 'line', color: 0xbdb7b0, opacity: 0.26, offset: 0.035, jitter: 0.028 },
-      { kind: 'points', color: 0x171718, opacity: 0.36, size: 0.13, jitter: 0.045, every: 2 },
+      { kind: 'points', color: 0x171718, opacity: 0.66, size: 0.28, jitter: 0.012, nib: 'charcoal' },
     ],
   },
   {
     name: 'signal-pen', snap: 0, audio: [1850, 4.2, 0.024],
     layers: [
       { kind: 'line', color: 0x342461, opacity: 0.88 },
-      { kind: 'line', color: 0x8d6fff, opacity: 0.5, offset: 0.03 },
-      { kind: 'points', color: 0xffffff, opacity: 0.4, size: 0.075, every: 3 },
     ],
   },
   {
     name: 'swarm-wand', snap: 0, audio: [1180, 0.32, 0.025],
     layers: [
-      { kind: 'line', color: 0xcaffac, opacity: 0.2 },
-      { kind: 'points', color: 0xddffd1, opacity: 0.92, size: 0.1, jitter: 0.038 },
-      { kind: 'points', color: 0x78f450, opacity: 0.54, size: 0.16, jitter: 0.072, every: 3 },
+      { kind: 'points', color: 0xddffd1, opacity: 0.82, size: 0.18, jitter: 0.024, nib: 'spray' },
     ],
   },
   {
     name: 'metal-quill', snap: 0.035, audio: [2650, 1.7, 0.026],
     layers: [
-      { kind: 'line', color: 0xffe0a4, opacity: 0.86 },
-      { kind: 'line', color: 0xb87931, opacity: 0.54, offset: -0.024 },
-      { kind: 'points', color: 0xf6bf68, opacity: 0.34, size: 0.075, jitter: 0.018, every: 2 },
+      { kind: 'points', color: 0xffe0a4, opacity: 0.88, size: 0.23, nib: 'quill' },
     ],
   },
   {
     name: 'memory-pencil', snap: 0, audio: [980, 0.9, 0.03],
     layers: [
-      { kind: 'line', color: 0xf3f5ff, opacity: 0.7 },
-      { kind: 'line', color: 0xff7fa9, opacity: 0.4, offset: 0.034, jitter: 0.008 },
-      { kind: 'line', color: 0x8da4ff, opacity: 0.26, offset: -0.034, jitter: 0.008 },
+      { kind: 'line', color: 0xf3f5ff, opacity: 0.74, jitter: 0.004 },
     ],
   },
 ];
 const MAX_STROKES = 8;
 const MAX_POINTS_PER_STROKE = 720;
 const MIN_POINTS_TO_TRANSFORM = 24;
-const DRAW_TIME_LIMIT = 15;
+const DRAW_TIME_LIMIT = 20;
 const challengeWords = ['hesitate', 'correct', 'drift', 'return', 'remember', 'deviate'];
 const challengeSeed = (() => {
   const values = new Uint32Array(1);
@@ -816,17 +799,50 @@ function lineFromPoints(points, color, opacity = 1) {
   return new THREE.Line(geometry, material);
 }
 
-function makeBrushNibTexture() {
+function makeBrushNibTexture(kind = 'round') {
   const canvas = document.createElement('canvas');
   canvas.width = 64;
   canvas.height = 64;
   const context = canvas.getContext('2d');
-  const gradient = context.createRadialGradient(32, 32, 1, 32, 32, 30);
-  gradient.addColorStop(0, 'rgba(255,255,255,0.96)');
-  gradient.addColorStop(0.62, 'rgba(255,255,255,0.78)');
-  gradient.addColorStop(1, 'rgba(255,255,255,0)');
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, 64, 64);
+  if (kind === 'calligraphy' || kind === 'quill') {
+    context.translate(32, 32);
+    context.rotate(kind === 'quill' ? -0.82 : -0.58);
+    context.scale(kind === 'quill' ? 0.22 : 0.34, 1);
+    const gradient = context.createRadialGradient(0, 0, 1, 0, 0, 27);
+    gradient.addColorStop(0, 'rgba(255,255,255,0.98)');
+    gradient.addColorStop(0.78, 'rgba(255,255,255,0.9)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.arc(0, 0, 28, 0, Math.PI * 2);
+    context.fill();
+  } else if (kind === 'charcoal') {
+    for (let index = 0; index < 90; index += 1) {
+      const angle = index * 2.399;
+      const radius = Math.sqrt(index / 90) * 27;
+      const alpha = 0.22 + ((index * 17) % 11) / 15;
+      context.fillStyle = `rgba(255,255,255,${alpha})`;
+      context.fillRect(32 + Math.cos(angle) * radius, 32 + Math.sin(angle) * radius, 1.5 + (index % 3), 1.5 + (index % 2));
+    }
+  } else if (kind === 'spray') {
+    for (let index = 0; index < 52; index += 1) {
+      const angle = index * 2.173;
+      const radius = Math.sqrt(index / 52) * 29;
+      context.globalAlpha = 0.25 + (index % 5) * 0.13;
+      context.beginPath();
+      context.arc(32 + Math.cos(angle) * radius, 32 + Math.sin(angle) * radius, 0.8 + (index % 3) * 0.45, 0, Math.PI * 2);
+      context.fillStyle = '#fff';
+      context.fill();
+    }
+    context.globalAlpha = 1;
+  } else {
+    const gradient = context.createRadialGradient(32, 32, 1, 32, 32, 30);
+    gradient.addColorStop(0, 'rgba(255,255,255,0.96)');
+    gradient.addColorStop(kind === 'brush' ? 0.76 : 0.62, kind === 'brush' ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.78)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 64, 64);
+  }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true;
@@ -834,6 +850,14 @@ function makeBrushNibTexture() {
 }
 
 const brushNibTexture = makeBrushNibTexture();
+const brushNibTextures = {
+  round: brushNibTexture,
+  brush: makeBrushNibTexture('brush'),
+  calligraphy: makeBrushNibTexture('calligraphy'),
+  charcoal: makeBrushNibTexture('charcoal'),
+  spray: makeBrushNibTexture('spray'),
+  quill: makeBrushNibTexture('quill'),
+};
 
 function createDynamicPrimitive(layer) {
   const positions = new Float32Array(MAX_POINTS_PER_STROKE * 3);
@@ -847,7 +871,7 @@ function createDynamicPrimitive(layer) {
       opacity: layer.opacity,
       size: layer.size,
       sizeAttenuation: true,
-      map: brushNibTexture,
+      map: brushNibTextures[layer.nib] || brushNibTexture,
       alphaTest: 0.025,
       depthWrite: false,
     })
@@ -897,7 +921,7 @@ function pushDynamicPoint(stroke, point) {
     const i = count * 3;
     primitive.userData.positions[i] = x;
     primitive.userData.positions[i + 1] = y;
-    primitive.userData.positions[i + 2] = point.z + layerIndex * 0.0015;
+    primitive.userData.positions[i + 2] = point.z;
     primitive.userData.count += 1;
     primitive.geometry.attributes.position.needsUpdate = true;
     primitive.geometry.setDrawRange(0, primitive.userData.count);
@@ -1356,7 +1380,8 @@ function addDrawPoint() {
   point.y = clamp(point.y, -2.14, 1.94);
   const data = stageData[stageIndex];
   const active = activeStrokeState(data);
-  point.z = Math.sin((data[active.totalKey] + currentStroke.length) * 0.23) * 0.018;
+  // Input remains a flat physical mark. Dimensionality arrives only after Transform.
+  point.z = 0;
   const previous = currentStroke.at(-1);
   if (previous && previous.distanceTo(point) < 0.024) return;
   if (currentStroke.length >= MAX_POINTS_PER_STROKE) {
