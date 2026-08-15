@@ -31,12 +31,12 @@ const openerCopy = document.querySelector('#opener-copy');
 const openerCaptchaCode = document.querySelector('#opener-captcha-code');
 const openerLoadValue = document.querySelector('#opener-load-value');
 
-const OPENER_DURATION = reducedMotion ? 2.4 : 15.35;
+const OPENER_DURATION = reducedMotion ? 2.4 : 19.35;
 const OPENER_VIDEO_START = 7.35;
 const HUMAN_QUESTION = 'Are you a human?';
 const AI_QUESTION = 'Are you an AI?';
 const QUESTION_PREFIX = 'Are you ';
-const CAPTCHA_CODES = ['x829W', '7mQ4K', 'R3a8P', 'n6V2Z', 'C9y7F', '4Hk2X', 'p8M5R', 'A1u9N', 'Q7e3B', '2Zx6L', 'h5T8C', 'W0r4J'];
+const CAPTCHA_CODES = ['x829W', '7mQ4K', 'R3a8P', 'n6V2Z', 'C9y7F', '4Hk2X', 'p8M5R', 'A1u9N', 'Q7e3B', '2Zx6L', 'h5T8C', 'W0r4J', 'b7K3V', '9Pc2M', 'f4X8Q', 'T6n1R', '3Ya7H', 'v9D5E', 'L2q8S', '6Jm4A'];
 
 let openerStartedAt = null;
 let openerFinished = false;

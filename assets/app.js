@@ -34887,12 +34887,12 @@ void main() {
   var openerCopy = document.querySelector("#opener-copy");
   var openerCaptchaCode = document.querySelector("#opener-captcha-code");
   var openerLoadValue = document.querySelector("#opener-load-value");
-  var OPENER_DURATION = reducedMotion ? 2.4 : 15.35;
+  var OPENER_DURATION = reducedMotion ? 2.4 : 19.35;
   var OPENER_VIDEO_START = 7.35;
   var HUMAN_QUESTION = "Are you a human?";
   var AI_QUESTION = "Are you an AI?";
   var QUESTION_PREFIX = "Are you ";
-  var CAPTCHA_CODES = ["x829W", "7mQ4K", "R3a8P", "n6V2Z", "C9y7F", "4Hk2X", "p8M5R", "A1u9N", "Q7e3B", "2Zx6L", "h5T8C", "W0r4J"];
+  var CAPTCHA_CODES = ["x829W", "7mQ4K", "R3a8P", "n6V2Z", "C9y7F", "4Hk2X", "p8M5R", "A1u9N", "Q7e3B", "2Zx6L", "h5T8C", "W0r4J", "b7K3V", "9Pc2M", "f4X8Q", "T6n1R", "3Ya7H", "v9D5E", "L2q8S", "6Jm4A"];
   var openerStartedAt = null;
   var openerFinished = false;
   var openerTypedText = "";
