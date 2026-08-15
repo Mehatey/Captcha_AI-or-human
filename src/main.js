@@ -426,7 +426,7 @@ function playOpenerCrackSound(intensity = 0.5, blast = false) {
     }
   }
   const now = audioContext.currentTime;
-  const hits = blast ? 4 : 1;
+  const hits = blast ? 5 : 2;
   for (let hit = 0; hit < hits; hit += 1) {
     const start = now + hit * 0.047;
     const noise = audioContext.createBufferSource();
@@ -437,7 +437,7 @@ function playOpenerCrackSound(intensity = 0.5, blast = false) {
     filter.frequency.setValueAtTime((blast ? 920 : 1450) + hit * 370, start);
     filter.frequency.exponentialRampToValueAtTime(260 + hit * 70, start + 0.22);
     filter.Q.value = 0.7 + hit * 0.18;
-    gain.gain.setValueAtTime(Math.max(0.001, intensity * (blast ? 0.16 : 0.09) * (1 - hit * 0.14)), start);
+    gain.gain.setValueAtTime(Math.max(0.001, intensity * (blast ? 0.24 : 0.18) * (1 - hit * 0.14)), start);
     gain.gain.exponentialRampToValueAtTime(0.0001, start + (blast ? 0.32 : 0.18));
     noise.connect(filter).connect(gain).connect(audioContext.destination);
     noise.start(start);
@@ -447,7 +447,7 @@ function playOpenerCrackSound(intensity = 0.5, blast = false) {
   thud.type = 'sine';
   thud.frequency.setValueAtTime(blast ? 82 : 118, now);
   thud.frequency.exponentialRampToValueAtTime(blast ? 31 : 62, now + 0.28);
-  thudGain.gain.setValueAtTime(intensity * (blast ? 0.13 : 0.035), now);
+  thudGain.gain.setValueAtTime(intensity * (blast ? 0.18 : 0.065), now);
   thudGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
   thud.connect(thudGain).connect(audioContext.destination);
   thud.start(now);
@@ -461,6 +461,7 @@ function startOpener() {
   opener.classList.add('is-running');
   openerVideo.currentTime = 0;
   openerAudio.currentTime = 0;
+  openerAudio.volume = 0.24;
   audioContext ??= new (window.AudioContext || window.webkitAudioContext)();
   audioContext.resume?.().catch?.(() => {});
   if (!reducedMotion) {
@@ -548,7 +549,7 @@ function animateOpener(now) {
     const crackSoundStep = elapsed >= 5 ? 3 : elapsed >= 3.32 ? 2 : elapsed >= 1.62 ? 1 : 0;
     if (crackSoundStep > openerCrackSoundStep) {
       openerCrackSoundStep = crackSoundStep;
-      playOpenerCrackSound(crackSoundStep / 3, crackSoundStep === 3);
+      playOpenerCrackSound([0, 0.58, 0.8, 1][crackSoundStep], crackSoundStep === 3);
     }
     const nextText = typewriterText(elapsed);
     if (nextText !== openerTypedText) {
