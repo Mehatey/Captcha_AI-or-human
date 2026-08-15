@@ -24,14 +24,13 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matc
 const opener = document.querySelector('#opener');
 const openerCanvas = document.querySelector('#opener-canvas');
 const openerVideo = document.querySelector('#opener-video');
-const openerGhostVideo = document.querySelector('#opener-video-ghost');
 const openerAudio = document.querySelector('#opener-audio');
 const openerEnter = document.querySelector('#opener-enter');
 const openerCopy = document.querySelector('#opener-copy');
 const openerLoadValue = document.querySelector('#opener-load-value');
 
-const OPENER_DURATION = reducedMotion ? 2.4 : 19.45;
-const OPENER_VIDEO_START = 7.85;
+const OPENER_DURATION = reducedMotion ? 2.4 : 25.5;
+const OPENER_VIDEO_START = 14.3;
 const HUMAN_QUESTION = 'Are you a human?';
 const AI_QUESTION = 'Are you an AI?';
 const QUESTION_PREFIX = 'Are you ';
@@ -48,6 +47,12 @@ let openerFaceTargets = [];
 let openerModelReady = false;
 let openerLoadProgress = 0;
 let openerKeyBuffer = null;
+
+const openerVideoTexture = new THREE.VideoTexture(openerVideo);
+openerVideoTexture.colorSpace = THREE.SRGBColorSpace;
+openerVideoTexture.minFilter = THREE.LinearFilter;
+openerVideoTexture.magFilter = THREE.LinearFilter;
+openerVideoTexture.generateMipmaps = false;
 
 const openerRenderer = new THREE.WebGLRenderer({ canvas: openerCanvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
 openerRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -78,14 +83,17 @@ openerLogoScene.add(openerWarm);
 function setOpenerFragmentTargets() {
   if (!openerFragments || !openerFaceTargets.length) return;
   const targetAttribute = openerFragments.geometry.attributes.aTarget;
+  const videoUvAttribute = openerFragments.geometry.attributes.aVideoUv;
   const seedAttribute = openerFragments.geometry.attributes.aSeed;
   for (let index = 0; index < targetAttribute.count; index += 1) {
     const seed = seedAttribute.getX(index);
     const targetIndex = Math.floor((index * 97 + seed * 997) % openerFaceTargets.length);
     const target = openerFaceTargets[targetIndex];
-    targetAttribute.setXYZ(index, target.x, target.y, target.z);
+    targetAttribute.setXYZ(index, target.position.x, target.position.y, target.position.z);
+    videoUvAttribute.setXY(index, target.uv.x, target.uv.y);
   }
   targetAttribute.needsUpdate = true;
+  videoUvAttribute.needsUpdate = true;
 }
 
 new THREE.ImageLoader().load('./opener/human-face-target.png', (image) => {
@@ -105,11 +113,14 @@ new THREE.ImageLoader().load('./opener/human-face-target.png', (image) => {
       const brightness = Math.max(red, green, blue);
       if (brightness < 34) continue;
       const hash = ((x * 73856093) ^ (y * 19349663)) >>> 0;
-      points.push(new THREE.Vector3(
-        (x / canvas.width - 0.5) * 5.25,
-        (0.5 - y / canvas.height) * 2.95,
-        (brightness / 255 - 0.5) * 0.24 + ((hash % 100) / 100 - 0.5) * 0.08,
-      ));
+      points.push({
+        position: new THREE.Vector3(
+          (x / canvas.width - 0.5) * 5.25,
+          (0.5 - y / canvas.height) * 2.95,
+          (brightness / 255 - 0.5) * 0.24 + ((hash % 100) / 100 - 0.5) * 0.08,
+        ),
+        uv: new THREE.Vector2(x / canvas.width, 1 - y / canvas.height),
+      });
     }
   }
   openerFaceTargets = points;
@@ -141,6 +152,7 @@ function configureOpenerCracks(material) {
         float openerReveal = smoothstep(openerRadius, openerRadius + 0.2, uOpenerCrack);
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.006, 0.008, 0.012), openerCrack * openerReveal * 0.94);
         diffuseColor.rgb += vec3(0.06, 0.42, 0.82) * openerEdge * openerReveal * 0.42;
+        diffuseColor.a *= 1.0 - openerCrack * openerReveal * 0.48;
       `);
   };
   material.customProgramCacheKey = () => 'captcha-crack-v2';
@@ -170,6 +182,7 @@ function createOpenerFragments(root) {
   const count = Math.min(2800, candidates.length);
   const positions = new Float32Array(count * 3);
   const targets = new Float32Array(count * 3);
+  const videoUvs = new Float32Array(count * 2);
   const seeds = new Float32Array(count);
   const sampleStride = candidates.length / count;
   for (let index = 0; index < count; index += 1) {
@@ -182,10 +195,13 @@ function createOpenerFragments(root) {
     targets[index * 3] = Math.cos(angle) * (0.55 + sample.seed * 1.25);
     targets[index * 3 + 1] = Math.sin(angle) * (0.8 + sample.seed * 0.7);
     targets[index * 3 + 2] = (sample.seed - 0.5) * 0.18;
+    videoUvs[index * 2] = 0.5 + Math.cos(angle) * 0.2;
+    videoUvs[index * 2 + 1] = 0.5 + Math.sin(angle) * 0.2;
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('aTarget', new THREE.BufferAttribute(targets, 3));
+  geometry.setAttribute('aVideoUv', new THREE.BufferAttribute(videoUvs, 2));
   geometry.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1));
   openerFragmentUniforms = {
     uScatter: { value: 0 },
@@ -193,6 +209,7 @@ function createOpenerFragments(root) {
     uResolve: { value: 0 },
     uTime: { value: 0 },
     uPixelRatio: { value: Math.min(window.devicePixelRatio, 1.5) },
+    uVideo: { value: openerVideoTexture },
   };
   const material = new THREE.ShaderMaterial({
     uniforms: openerFragmentUniforms,
@@ -207,8 +224,11 @@ function createOpenerFragments(root) {
       uniform float uPixelRatio;
       attribute float aSeed;
       attribute vec3 aTarget;
+      attribute vec2 aVideoUv;
       varying float vAlpha;
       varying float vSeed;
+      varying float vForm;
+      varying vec2 vVideoUv;
       void main() {
         float scatter = uScatter * uScatter * (3.0 - 2.0 * uScatter);
         float form = uForm * uForm * (3.0 - 2.0 * uForm);
@@ -235,17 +255,25 @@ function createOpenerFragments(root) {
         gl_PointSize = (1.15 + aSeed * 2.15) * uPixelRatio * (1.0 + form * 0.22);
         vAlpha = smoothstep(0.06, 0.38, uScatter) * (1.0 - uResolve);
         vSeed = aSeed;
+        vForm = form;
+        vVideoUv = aVideoUv;
       }
     `,
     fragmentShader: `
+      uniform sampler2D uVideo;
       varying float vAlpha;
       varying float vSeed;
+      varying float vForm;
+      varying vec2 vVideoUv;
       void main() {
         float distanceToCenter = length(gl_PointCoord - 0.5);
         float particle = 1.0 - smoothstep(0.08, 0.5, distanceToCenter);
         vec3 blue = vec3(0.08, 0.3, 0.62);
         vec3 silver = vec3(0.55, 0.78, 0.86);
         vec3 color = mix(blue, silver, smoothstep(0.18, 0.9, vSeed));
+        vec3 videoColor = texture2D(uVideo, vVideoUv).rgb;
+        videoColor = pow(videoColor, vec3(0.92)) * 1.06;
+        color = mix(color, videoColor, smoothstep(0.48, 0.94, vForm) * 0.92);
         gl_FragColor = vec4(color, particle * vAlpha * (0.46 + vSeed * 0.44));
       }
     `,
@@ -345,7 +373,6 @@ function finishOpener() {
   if (openerFinished) return;
   openerFinished = true;
   openerVideo.pause();
-  openerGhostVideo.pause();
   openerAudio.pause();
   opener.classList.add('is-exiting');
   document.body.classList.add('opener-complete');
@@ -354,6 +381,7 @@ function finishOpener() {
     opener.hidden = true;
     openerFragments?.geometry.dispose();
     openerFragments?.material.dispose();
+    openerVideoTexture.dispose();
     openerEnvironmentTarget.dispose();
     openerRenderer.dispose();
   }, reducedMotion ? 120 : 1050);
@@ -399,14 +427,12 @@ function startOpener() {
   openerStartedAt = performance.now();
   opener.classList.add('is-running');
   openerVideo.currentTime = 0;
-  openerGhostVideo.currentTime = 0;
   openerAudio.currentTime = 0;
   audioContext ??= new (window.AudioContext || window.webkitAudioContext)();
   audioContext.resume?.().catch?.(() => {});
   if (!reducedMotion) {
     openerVideo.playbackRate = 1;
-    openerGhostVideo.playbackRate = 1;
-    openerAudio.playbackRate = 0.55;
+    openerAudio.playbackRate = 0.36;
   }
   openerAudio.play().catch(() => {});
   if (reducedMotion) {
@@ -416,7 +442,6 @@ function startOpener() {
   window.setTimeout(() => {
     if (openerFinished) return;
     openerVideo.play().catch(() => {});
-    openerGhostVideo.play().catch(() => {});
   }, OPENER_VIDEO_START * 1000);
 }
 
@@ -424,19 +449,19 @@ openerEnter.addEventListener('click', startOpener);
 
 function typewriterText(elapsed) {
   if (reducedMotion) return elapsed < 1.2 ? HUMAN_QUESTION : AI_QUESTION;
-  if (elapsed < 16.05) return '';
-  if (elapsed < 17.15) {
-    const length = Math.floor(THREE.MathUtils.mapLinear(elapsed, 16.05, 17.15, 0, HUMAN_QUESTION.length + 0.99));
+  if (elapsed < 22.1) return '';
+  if (elapsed < 23.2) {
+    const length = Math.floor(THREE.MathUtils.mapLinear(elapsed, 22.1, 23.2, 0, HUMAN_QUESTION.length + 0.99));
     return HUMAN_QUESTION.slice(0, length);
   }
-  if (elapsed < 17.55) return HUMAN_QUESTION;
-  if (elapsed < 18.0) {
-    const erase = Math.ceil(THREE.MathUtils.mapLinear(elapsed, 17.55, 18.0, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
+  if (elapsed < 23.6) return HUMAN_QUESTION;
+  if (elapsed < 24.05) {
+    const erase = Math.ceil(THREE.MathUtils.mapLinear(elapsed, 23.6, 24.05, 0, HUMAN_QUESTION.length - QUESTION_PREFIX.length));
     return HUMAN_QUESTION.slice(0, HUMAN_QUESTION.length - erase);
   }
-  if (elapsed < 18.55) {
+  if (elapsed < 24.6) {
     const suffix = AI_QUESTION.slice(QUESTION_PREFIX.length);
-    const length = Math.floor(THREE.MathUtils.mapLinear(elapsed, 18.0, 18.55, 0, suffix.length + 0.99));
+    const length = Math.floor(THREE.MathUtils.mapLinear(elapsed, 24.05, 24.6, 0, suffix.length + 0.99));
     return QUESTION_PREFIX + suffix.slice(0, length);
   }
   return AI_QUESTION;
@@ -449,21 +474,24 @@ function animateOpener(now) {
 
   if (openerModelReady && openerModel) {
     const activeTime = openerStartedAt === null ? idle * 0.34 : elapsed;
-    const crack = openerStartedAt === null ? 0 : THREE.MathUtils.smoothstep(elapsed, 1.65, 3.35);
-    const scatter = openerStartedAt === null ? 0 : THREE.MathUtils.smoothstep(elapsed, 3.05, 4.15);
-    const form = openerStartedAt === null ? 0 : THREE.MathUtils.smoothstep(elapsed, 4.05, 7.95);
-    const resolve = openerStartedAt === null ? 0 : THREE.MathUtils.smoothstep(elapsed, 7.85, 8.95);
+    const spinEnd = 7.4;
+    const crack = openerStartedAt === null ? 0 : THREE.MathUtils.smoothstep(elapsed, 7.55, 9.25);
+    const scatter = openerStartedAt === null ? 0 : THREE.MathUtils.smoothstep(elapsed, 9.25, 10.45);
+    const form = openerStartedAt === null ? 0 : THREE.MathUtils.smoothstep(elapsed, 10.25, 14.7);
+    const resolve = openerStartedAt === null ? 0 : THREE.MathUtils.smoothstep(elapsed, 14.4, 15.8);
     const solidFade = THREE.MathUtils.smoothstep(scatter, 0.08, 0.9);
-    const spin = activeTime * (openerStartedAt === null ? 0.72 : 1.55);
-    const lockedSpin = Math.PI * 2;
-    openerModel.rotation.y = THREE.MathUtils.lerp(spin, lockedSpin, form);
-    openerModel.rotation.x = Math.sin(activeTime * 0.78) * 0.1 * (1 - form);
-    openerModel.rotation.z = Math.sin(activeTime * 0.42) * 0.035 * (1 - form);
-    openerModel.position.x = Math.sin(activeTime * 0.7) * 0.06 * (1 - form);
-    openerModel.position.y = Math.sin(activeTime * 0.84) * 0.08 * (1 - form);
+    const spin = openerStartedAt === null
+      ? activeTime * 0.72
+      : Math.min(elapsed / spinEnd, 1) * Math.PI * 6;
+    openerModel.rotation.y = spin;
+    const motionFade = openerStartedAt === null ? 1 : 1 - THREE.MathUtils.smoothstep(elapsed, spinEnd - 0.55, spinEnd);
+    openerModel.rotation.x = Math.sin(activeTime * 0.78) * 0.1 * motionFade;
+    openerModel.rotation.z = Math.sin(activeTime * 0.42) * 0.035 * motionFade;
+    openerModel.position.x = Math.sin(activeTime * 0.7) * 0.06 * motionFade;
+    openerModel.position.y = Math.sin(activeTime * 0.84) * 0.08 * motionFade;
     const scale = openerStartedAt === null
       ? 0.52
-      : 0.57 + Math.sin(Math.min(1, elapsed / 4.15) * Math.PI) * 0.025 + form * 0.12;
+      : 0.57 + Math.sin(Math.min(1, elapsed / spinEnd) * Math.PI) * 0.025 + form * 0.2;
     openerModel.scale.setScalar(scale);
     openerKey.position.x = Math.sin(activeTime * 1.05) * 4.2;
     openerRim.position.x = -3.2 + Math.cos(activeTime * 0.72) * 1.2;

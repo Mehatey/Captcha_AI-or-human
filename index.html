@@ -23,7 +23,6 @@
     <section id="opener" class="opener is-loading" aria-label="CAPTCHA After Human introduction">
       <canvas id="opener-canvas" aria-hidden="true"></canvas>
       <video id="opener-video" class="opener-video" src="./opener/human-hologram.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
-      <video id="opener-video-ghost" class="opener-video opener-video-ghost" src="./opener/human-hologram-alpha.webm" muted playsinline preload="auto" aria-hidden="true"></video>
       <pre class="opener-code opener-code-left" aria-hidden="true"><code>const frame = new VideoFrame(human);
 const input = await preprocess(frame);
 const identity = await encoder.run({ input });</code></pre>
