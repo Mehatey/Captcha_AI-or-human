@@ -786,6 +786,7 @@ const previousPointerWorld = new THREE.Vector3();
 const clock = new THREE.Clock();
 let pointerDown = false;
 let stageIndex = 0;
+let activeDrawingPointerId = null;
 let currentStroke = null;
 let currentLiveLine = null;
 let currentMachineGhost = null;
@@ -2509,20 +2510,31 @@ function goToStage(index) {
 }
 
 function handlePointerDown(event) {
+  // The opener sits above this canvas. Its Enter click used to bubble to the
+  // window handler and start a blank drawing timer before the experience was
+  // visible. Only a direct canvas gesture can begin a stroke.
+  if (!document.body.classList.contains('opener-complete')) return;
+  if (event.target !== renderer.domElement) return;
   if (event.isTrusted) experience.classList.add('has-pointer');
-  if (event.target.closest?.('button, a')) return;
   if (stageData[stageIndex]?.phase === 'draw' && event.clientX > window.innerWidth * 0.5) return;
+  activeDrawingPointerId = event.pointerId;
+  renderer.domElement.setPointerCapture?.(event.pointerId);
   pointerToWorld(event);
   beginStroke();
 }
 
 function handlePointerMove(event) {
+  if (!document.body.classList.contains('opener-complete')) return;
+  if (event.target !== renderer.domElement && !pointerDown) return;
   if (event.isTrusted) experience.classList.add('has-pointer');
   pointerToWorld(event);
   if (pointerDown) addDrawPoint();
 }
 
-function handlePointerUp() {
+function handlePointerUp(event) {
+  if (activeDrawingPointerId !== null && event?.pointerId !== activeDrawingPointerId) return;
+  if (activeDrawingPointerId !== null) renderer.domElement.releasePointerCapture?.(activeDrawingPointerId);
+  activeDrawingPointerId = null;
   finishStroke();
 }
 
