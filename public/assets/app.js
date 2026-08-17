@@ -35620,6 +35620,7 @@ void main() {
   var clock = new Clock();
   var pointerDown = false;
   var stageIndex = 0;
+  var activeDrawingPointerId = null;
   var currentStroke = null;
   var currentLiveLine = null;
   var currentMachineGhost = null;
@@ -37179,18 +37180,26 @@ void main() {
     restoreStageUi(target);
   }
   function handlePointerDown(event) {
+    if (!document.body.classList.contains("opener-complete")) return;
+    if (event.target !== renderer.domElement) return;
     if (event.isTrusted) experience.classList.add("has-pointer");
-    if (event.target.closest?.("button, a")) return;
     if (stageData[stageIndex]?.phase === "draw" && event.clientX > window.innerWidth * 0.5) return;
+    activeDrawingPointerId = event.pointerId;
+    renderer.domElement.setPointerCapture?.(event.pointerId);
     pointerToWorld(event);
     beginStroke();
   }
   function handlePointerMove(event) {
+    if (!document.body.classList.contains("opener-complete")) return;
+    if (event.target !== renderer.domElement && !pointerDown) return;
     if (event.isTrusted) experience.classList.add("has-pointer");
     pointerToWorld(event);
     if (pointerDown) addDrawPoint();
   }
-  function handlePointerUp() {
+  function handlePointerUp(event) {
+    if (activeDrawingPointerId !== null && event?.pointerId !== activeDrawingPointerId) return;
+    if (activeDrawingPointerId !== null) renderer.domElement.releasePointerCapture?.(activeDrawingPointerId);
+    activeDrawingPointerId = null;
     finishStroke();
   }
   window.addEventListener("pointerleave", () => experience.classList.remove("has-pointer", "is-over-control"));
